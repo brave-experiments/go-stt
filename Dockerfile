@@ -1,5 +1,7 @@
 FROM nvidia/cuda:12.2.2-devel-ubuntu22.04
 
+ARG GGML_MODEL=small
+
 RUN apt update && DEBIAN_FRONTEND=noninteractive apt install -y \
         bash git make vim wget g++
 
@@ -24,12 +26,10 @@ RUN make clean
 RUN WHISPER_CUBLAS=1 make -j libwhisper.a
 
 WORKDIR /app/third_party/whisper.cpp/
-RUN bash ./models/download-ggml-model.sh small
+RUN bash ./models/download-ggml-model.sh $GGML_MODEL
 
 WORKDIR /app
-
-RUN mv /app/third_party/whisper.cpp/models/ggml-*.bin ./models/ggml-model.bin
-
+RUN mkdir ./models && mv /app/third_party/whisper.cpp/models/ggml-*.bin ./models/ggml-model.bin
 RUN make build && mv bin/transcriber /bin/ && rm -rf bin
 
 ENTRYPOINT [ "/bin/transcriber" ]
