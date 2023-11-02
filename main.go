@@ -16,8 +16,8 @@ import (
   	"azul3d.org/engine/audio"
 	 _ "azul3d.org/engine/audio/flac"  
 
-	"github.com/boocmp/transcriber/whisper"
-	"github.com/boocmp/transcriber/google_streaming_api"
+	"github.com/brave-experiments/go-stt/whisper"
+	"github.com/brave-experiments/go-stt/google_streaming_api"
 )
 
 // Version set at compile-time

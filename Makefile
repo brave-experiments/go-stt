@@ -42,7 +42,7 @@ LIBRARY_PATH := $(abspath third_party/whisper.cpp)
 all: build
 
 clone:
-	@[ -d third_party/whisper.cpp ] || git clone https://github.com/boocmp/whisper.cpp.git third_party/whisper.cpp
+	@[ -d third_party/whisper.cpp ] || git clone https://github.com/brave-experiments/whisper.cpp.git third_party/whisper.cpp
 
 dependency: clone
 	@echo Build whisper

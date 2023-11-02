@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/boocmp/whisper.cpp/bindings/go/pkg/whisper"
+	"github.com/brave-experiments/whisper.cpp/bindings/go/pkg/whisper"
 	"github.com/rs/zerolog/log"
 )
 
