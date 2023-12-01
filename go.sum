@@ -1,7 +1,5 @@
 azul3d.org/engine v0.0.0-20211024043305-793ea6c2839d h1:oLr8Nu7iEKm8OKfHNznBnBj8Z/SKBa20yl7JKqJn4W8=
 azul3d.org/engine v0.0.0-20211024043305-793ea6c2839d/go.mod h1:3y1cwzJTKvXXop+EAg+AUVfNm3bfHf3djeX+l1UBuUE=
-github.com/brave-experiments/whisper.cpp/bindings/go v0.0.0-20231102103318-0dad03e80436 h1:8oivPf0lUKpMbN6V7QE6N4htLXMkAJI+aolXtzKL4eI=
-github.com/brave-experiments/whisper.cpp/bindings/go v0.0.0-20231102103318-0dad03e80436/go.mod h1:KKRZumBM2HhAnyL4papFJ01NHAaKDWluPID9/5JF4uA=
 github.com/coreos/go-systemd/v22 v22.5.0/go.mod h1:Y58oyj3AT4RCenI/lSvhwexgC+NSVTIJ3seZv2GcEnc=
 github.com/cpuguy83/go-md2man/v2 v2.0.2 h1:p1EgwI/C7NhT0JmVkwCD2ZBK8j4aeHQX2pMHHBfMQ6w=
 github.com/cpuguy83/go-md2man/v2 v2.0.2/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46tRHOmNcaadrF8o=

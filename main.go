@@ -60,8 +60,6 @@ func main() {
 	}
 }
 
-var model *whisper.WhisperModel
-
 type Handler struct {
 	Results chan whisper.TextResult
 	Done chan bool
@@ -120,7 +118,7 @@ func (hs *Handlers)CreateHandlerForRequest(req *http.Request) (*Handler, string)
 			lang = lang[:2]
 		}
 
-		transcriber, err := whisper.NewTranscriber(model, lang)
+		transcriber, err := whisper.NewTranscriber(lang)
 		if err != nil {
 			if hs.handlers[pair] != nil {
 				delete(hs.handlers, pair)
@@ -152,12 +150,6 @@ func (hs *Handlers)CreateHandlerForRequest(req *http.Request) (*Handler, string)
 var handlers Handlers
 
 func run(c* cli.Context) error {
-	if m, err := whisper.LoadWhisperModel("/app/models/ggml-model.bin"); err != nil {
-		return err
-        } else {
-		model = m
-	}
-
 	handlers = Handlers{ handlers: make(map[string]*Handler) }
 	
 	http.HandleFunc("/up", handleUpstream)
