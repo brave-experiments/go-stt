@@ -17,9 +17,5 @@ svc = bentoml.Service(
 
 @svc.api(input=File(), output=JSON())
 async def process_audio(input_file: io.BytesIO):
-    path = tempfile.NamedTemporaryFile().name
-    with open(path, "wb") as f:
-        f.write(input_file.read())
-
-    transcript = await runner_audio_transcriber.transcribe_audio.async_run(path)
+    transcript = await runner_audio_transcriber.transcribe_audio.async_run(input_file.read())
     return transcript

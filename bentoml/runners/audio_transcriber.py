@@ -1,6 +1,7 @@
 import bentoml
 import whisper
 import torch
+import numpy as np
 
 class AudioTranscriber(bentoml.Runnable):
     SUPPORTED_RESOURCES = ("nvidia.com/gpu", "cpu")
@@ -12,6 +13,8 @@ class AudioTranscriber(bentoml.Runnable):
         self.model.to(self.device)
 
     @bentoml.Runnable.method(batchable=False)
-    def transcribe_audio(self, audio_path):
-        transcription = self.model.transcribe(audio_path)
-        return transcription
+    def transcribe_audio(self, audio):
+        data = np.frombuffer(audio, np.float32).astype(np.float32)
+        data = whisper.pad_or_trim(data)
+        transcription = self.model.transcribe(data)
+        return transcription['text']
