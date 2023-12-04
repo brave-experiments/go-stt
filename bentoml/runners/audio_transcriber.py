@@ -16,9 +16,9 @@ class AudioTranscriber(bentoml.Runnable):
         self.model = WhisperModel(model, device=device, compute_type=compute_type)
 
     @bentoml.Runnable.method(batchable=True)
-    def transcribe_audio(self, data: List[np.ndarray]) -> List[JSON]:
+    def transcribe_audio(self, **data):
         result = []
-        for audio in data:
+        for audio in data.item():
             segments = self.model.transcribe(audio, vad_filter=True, vad_parameters=dict(min_silence_duration_ms=500))
             text = ""
             for s in segments:
