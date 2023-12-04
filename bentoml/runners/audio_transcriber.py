@@ -1,4 +1,6 @@
+from ast import List
 import bentoml
+from bentoml.io import JSON
 import torch
 from faster_whisper import WhisperModel
 import numpy as np
@@ -13,15 +15,14 @@ class AudioTranscriber(bentoml.Runnable):
         model = "base.en"
         self.model = WhisperModel(model, device=device, compute_type=compute_type)
 
-    @bentoml.Runnable.method(batchable=False)
-    def transcribe_audio(self, audio):
-        data = np.frombuffer(audio, np.float32).astype(np.float32)
-        segments, info = self.model.transcribe(data, vad_filter=True, vad_parameters=dict(min_silence_duration_ms=500))
+    @bentoml.Runnable.method(batchable=True)
+    def transcribe_audio(self, data: List[np.ndarray]) -> List[JSON]:
+        result = []
+        for audio in data:
+            segments = self.model.transcribe(audio, vad_filter=True, vad_parameters=dict(min_silence_duration_ms=500))
+            text = ""
+            for s in segments:
+                text = text + " "  + s.text
+            result += JSON({ text: text })
 
-        text = ""
-        for segment in segments:
-            # text = text + " "  + segment.text
-            print(segment)
-            text += segment.text
-
-        return { "text" : text }
+        return result
