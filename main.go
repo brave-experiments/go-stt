@@ -23,6 +23,8 @@ import (
 // Version set at compile-time
 var (
 	Version string
+	// http://192.168.88.180:3000/process_audio
+	TranscriberURL string
 )
 
 func main() {
@@ -48,12 +50,12 @@ func main() {
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	log.Logger = log.With().Caller().Logger()
 
-
 	app := cli.NewApp()
 	app.Name = "Speech-to-Text Using Whisper API"
 	app.Usage = "Speech-to-Text."
 	app.Action = run
 	app.Version = Version
+	app.Flags = []cli.Flag{&cli.StringFlag{Name: "trscb-url", Value: "", Usage: "Transcriber API url"}}
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal().Err(err).Msg("can't run app")
@@ -118,7 +120,7 @@ func (hs *Handlers)CreateHandlerForRequest(req *http.Request) (*Handler, string)
 			lang = lang[:2]
 		}
 
-		transcriber, err := whisper.NewTranscriber(lang)
+		transcriber, err := whisper.NewTranscriber(TranscriberURL, lang)
 		if err != nil {
 			if hs.handlers[pair] != nil {
 				delete(hs.handlers, pair)
@@ -150,6 +152,9 @@ func (hs *Handlers)CreateHandlerForRequest(req *http.Request) (*Handler, string)
 var handlers Handlers
 
 func run(c* cli.Context) error {
+        TranscriberURL = c.String("trscb-url")
+	log.Info().Msg(TranscriberURL)
+
 	handlers = Handlers{ handlers: make(map[string]*Handler) }
 	
 	http.HandleFunc("/up", handleUpstream)
@@ -212,7 +217,6 @@ func handleDownstream(w http.ResponseWriter, req *http.Request) {
 	handlers.Unlock()
 
 	log.Info().Msgf("[DOWNSTREAM] Start with pair %s", pair)
-
 
 	select {
 		case <-handler.Paired:
