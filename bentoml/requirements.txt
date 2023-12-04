@@ -1,6 +1,4 @@
 bentoml
-ffmpeg
-ffmpeg_python
 more_itertools
 numpy
 aiohttp
@@ -12,7 +10,7 @@ spacy
 torch
 tqdm
 transformers
-git+https://github.com/openai/whisper.git
+faster_whisper
 yake
 nltk
 sentencepiece
