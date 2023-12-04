@@ -13,6 +13,5 @@ svc = bentoml.Service(
 )
 
 @svc.api(input=File(), output=JSON())
-async def process_audio(api_input):
-    transcript = await runner_audio_transcriber.transcribe_audio.async_run(**api_input)
-    return transcript
+async def process_audio(data):
+    return await runner_audio_transcriber.transcribe_audio.async_run(data)
