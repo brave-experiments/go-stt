@@ -1,0 +1,24 @@
+on:
+  push:
+    branches:
+      - main
+      - dev
+      - bentoml
+
+name: stt deployments
+jobs:
+  push:
+    name: Invoke stt Docker Build Pipeline
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.GDBP_AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.GDBP_AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-west-2
+        commit: ${{ github.sha }}
+    - name: stt deployments
+      uses: brave-intl/general-docker-build-pipeline-action@v1.0.11

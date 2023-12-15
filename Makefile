@@ -11,4 +11,4 @@ docker: build
 
 serve-docker: docker
 	sudo chown -R 1034:1043 models
-	docker run -it --rm -p 3000:3000 -v ./models/huggingface:/home/bentoml/.cache/huggingface translate:latest
+	docker run -it --rm -p 3000:3000 -v ./models/huggingface:/home/bentoml/.cache/huggingface stt:latest
