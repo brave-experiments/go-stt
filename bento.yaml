@@ -2,7 +2,7 @@ service: service:svc
 name: stt
 version: git
 bentoml_version: 1.1.10
-creation_time: '2023-12-15T01:29:15.115815+00:00'
+creation_time: '2023-12-15T01:32:57.800587+00:00'
 labels: {}
 models: []
 runners:

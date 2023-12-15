@@ -1,1 +1,1 @@
-bentoml/env/docker/Dockerfile
+env/docker/Dockerfile
