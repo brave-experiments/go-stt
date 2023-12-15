@@ -25,7 +25,7 @@ RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloa
 RUN set -eux && \
     apt-get update -y && \
     apt-get install -q -y --no-install-recommends --allow-remove-essential \
-        ca-certificates gnupg2 bash build-essential git
+        ca-certificates gnupg2 bash build-essential 
 
 RUN \
     set -eux && \
@@ -49,7 +49,7 @@ ARG BENTO_USER_UID=1034
 ARG BENTO_USER_GID=1034
 RUN groupadd -g $BENTO_USER_GID -o $BENTO_USER && useradd -m -u $BENTO_USER_UID -g $BENTO_USER_GID -o -r $BENTO_USER
 
-ENV BENTOML_CONFIG=configuration.yaml
+ENV BENTOML_CONFIG=src/configuration.yaml
 ARG BENTO_PATH=/home/bentoml/bento
 ENV BENTO_PATH=$BENTO_PATH
 ENV BENTOML_HOME=/home/bentoml/

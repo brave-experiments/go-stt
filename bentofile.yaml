@@ -7,9 +7,6 @@ include:
 python:
   requirements_txt: "requirements.txt"
 docker: 
-  distro: debian
-  system_packages:
-    - git
   cuda_version: "11.6.2"
   env:
-      BENTOML_CONFIG: "configuration.yaml"
+      BENTOML_CONFIG: "src/configuration.yaml"

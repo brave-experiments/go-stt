@@ -2,7 +2,7 @@ service: service:svc
 name: stt
 version: git
 bentoml_version: 1.1.10
-creation_time: '2023-12-15T01:32:57.800587+00:00'
+creation_time: '2023-12-15T20:35:17.977848+00:00'
 labels: {}
 models: []
 runners:
@@ -20,9 +20,8 @@ docker:
   python_version: '3.11'
   cuda_version: 11.6.2
   env:
-    BENTOML_CONFIG: configuration.yaml
-  system_packages:
-  - git
+    BENTOML_CONFIG: src/configuration.yaml
+  system_packages: null
   setup_script: null
   base_image: null
   dockerfile_template: null

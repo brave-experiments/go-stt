@@ -1,5 +1,5 @@
 import bentoml
-import torch
+import ctranslate2
 from faster_whisper import WhisperModel
 import numpy as np
 
@@ -8,8 +8,9 @@ class AudioTranscriber(bentoml.Runnable):
     SUPPORTS_CPU_MULTI_THREADING = True
 
     def __init__(self):
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        compute_type = "float16" if torch.cuda.is_available() else "int8"
+        device = "cuda" if ctranslate2.get_cuda_device_count() > 0 else "cpu"
+        compute_type = "int8_float16" if ctranslate2.get_cuda_device_count() > 0 else "int8"
+
         model = "base.en"
         self.model = WhisperModel(model, device=device, compute_type=compute_type)
 
