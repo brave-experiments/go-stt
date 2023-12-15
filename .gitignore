@@ -24,3 +24,6 @@ models/*
 third_party/whisper.cpp
 .env
 dist
+
+# python ignores
+__pycache__

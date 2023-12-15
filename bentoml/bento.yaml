@@ -1,0 +1,44 @@
+service: service:svc
+name: stt
+version: git
+bentoml_version: 1.1.10
+creation_time: '2023-12-15T01:29:15.115815+00:00'
+labels: {}
+models: []
+runners:
+- name: audio_transcriber
+  runnable_type: AudioTranscriber
+  embedded: false
+  models: []
+  resource_config: null
+apis:
+- name: process_audio
+  input_type: BytesIOFile
+  output_type: JSON
+docker:
+  distro: debian
+  python_version: '3.11'
+  cuda_version: 11.6.2
+  env:
+    BENTOML_CONFIG: configuration.yaml
+  system_packages:
+  - git
+  setup_script: null
+  base_image: null
+  dockerfile_template: null
+python:
+  requirements_txt: requirements.txt
+  packages: null
+  lock_packages: null
+  index_url: null
+  no_index: null
+  trusted_host: null
+  find_links: null
+  extra_index_url: null
+  pip_args: null
+  wheels: null
+conda:
+  environment_yml: null
+  channels: null
+  dependencies: null
+  pip: null

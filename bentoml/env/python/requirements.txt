@@ -1,0 +1,16 @@
+bentoml
+more_itertools
+numpy
+aiohttp
+pytest
+pytube
+regex
+setuptools
+spacy
+torch
+tqdm
+transformers
+faster_whisper
+yake
+nltk
+sentencepiece
