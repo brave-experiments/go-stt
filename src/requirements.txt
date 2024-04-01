@@ -1,1 +1,2 @@
 faster_whisper
+numpy
