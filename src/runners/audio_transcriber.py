@@ -22,4 +22,4 @@ class AudioTranscriber(bentoml.Runnable):
         for segment in segments:
             text += segment.text
 
-        return { "text" : text }
+        return { "text" : "test " + text }
