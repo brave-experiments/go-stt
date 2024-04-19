@@ -1,27 +1,15 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import StreamingResponse
 import google_streaming_api_pb2 as speech
-from runners.random_generator import RandomGenerator
 import bentoml
 from utils.npipe import AsyncNamedPipe
-import asyncio
+import io
+from  runners.audio_transcriber import AudioTranscriber
 
-runner_random_generator = bentoml.Runner(
-    RandomGenerator,
-    name="random_generator",
+runner_audio_transcriber = bentoml.Runner(
+    AudioTranscriber,
+    name="audio_transcriber",
 )
-
-class FlacDecoder:
-    def __init__(self):
-        self.decoder = pyflac.StreamDecoder(self.callback)
-        self.samples = asyncio.Queue()
-
-    def callback(self, data, sample_rate, num_channerls, num_samples):
-        self.samples.put(data)
-
-    def feed(self, data):
-        self.decoder.process(data)
-
 
 class RecongitionEvent:
     def __init__(self):
@@ -44,37 +32,39 @@ clients = {}
 
 @app.post("/up")
 async def handleUpstream(pair: str, request: Request):
-    pipe = AsyncNamedPipe()
-    await pipe.create(pair)
+    try:
+        mic_data = bytes()
 
-    async for chunk in request.stream():
-        await pipe.write(chunk)
+        async with await AsyncNamedPipe.create(pair) as pipe:
+            async for chunk in request.stream():
+                print(len(chunk))
+                mic_data += chunk
+                text = await runner_audio_transcriber.async_run(io.BytesIO(mic_data))
+                await pipe.write(text["text"] + '\n')
 
-    await pipe.close()
+    except Exception as e:
+        print("up :", e)
+        return "exception" + str(e)
+
     return ""
 
 @app.get("/down")
 async def handleDownstream(pair:str):
-    await asyncio.sleep(0.1)
-
+    print("down")
     async def handleStream(pair):
-        event = RecongitionEvent()
-        pipe = AsyncNamedPipe()
+        try:
+            async with await AsyncNamedPipe.open(pair) as pipe:
+                while True:
+                    text = await pipe.readline()
+                    if not text:
+                        break
+                    event = RecongitionEvent()
+                    event.add_text(text.strip('\n'))
 
-        await pipe.open(pair)
+                    yield event.to_bytes()
 
-        while True:
-            chunk = await pipe.read()
-            if chunk is None:
-                break
-
-            text = await runner_random_generator.async_run(chunk)
-            event.add_text(str(text))
-
-            yield event.to_bytes()
-
-        await pipe.close()
+        except Exception as e:
+            print("down :", e)
+            yield str(e)
 
     return StreamingResponse(handleStream(pair))
-
-

@@ -21,10 +21,12 @@ class AudioTranscriber(bentoml.Runnable):
 
         text = ""
         for segment in segments:
+            print(segment)
             text += segment.text
 
         return { "text" : text }
 
+"""
     @bentoml.Runnable.method(batchable=False)
     def transcribe_audio_data(self, audio):
         data = np.frombuffer(audio, np.float32).astype(np.float32)
@@ -35,3 +37,4 @@ class AudioTranscriber(bentoml.Runnable):
             text += segment.text
 
         return { "text" : text }
+"""
