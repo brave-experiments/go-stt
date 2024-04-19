@@ -1,2 +1,4 @@
 faster_whisper
-numpy
+fastapi
+aiofiles
+asyncio
