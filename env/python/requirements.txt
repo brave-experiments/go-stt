@@ -1,1 +1,4 @@
 faster_whisper
+fastapi
+aiofiles
+asyncio

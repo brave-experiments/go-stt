@@ -1,8 +1,12 @@
 service: "service:svc"
 include:
   - "service.py"
+  - "stt_api.py"
   - "runners/__init__.py"
   - "runners/audio_transcriber.py"
+  - "utils/google_streaming/google_streaming_api_pb2.py"
+  - "utils/npipe/__init__.py"
+  - "utils/npipe/_posix.py"
   - "configuration.yaml"
 python:
   requirements_txt: "requirements.txt"
