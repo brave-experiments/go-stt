@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import StreamingResponse
-import google_streaming_api_pb2 as speech
+import utils.google_streaming.google_streaming_api_pb2 as speech
 import bentoml
 from utils.npipe import AsyncNamedPipe
 import io
@@ -37,7 +37,6 @@ async def handleUpstream(pair: str, request: Request):
 
         async with await AsyncNamedPipe.create(pair) as pipe:
             async for chunk in request.stream():
-                print(len(chunk))
                 mic_data += chunk
                 text = await runner_audio_transcriber.async_run(io.BytesIO(mic_data))
                 await pipe.write(text["text"] + '\n')
@@ -50,7 +49,6 @@ async def handleUpstream(pair: str, request: Request):
 
 @app.get("/down")
 async def handleDownstream(pair:str):
-    print("down")
     async def handleStream(pair):
         try:
             async with await AsyncNamedPipe.open(pair) as pipe:
