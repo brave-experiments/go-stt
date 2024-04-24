@@ -1,10 +1,13 @@
 from fastapi import FastAPI, Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, JSONResponse
+from fastapi.encoders import jsonable_encoder
 import utils.google_streaming.google_streaming_api_pb2 as speech
 import bentoml
 from utils.npipe import AsyncNamedPipe
 import io
 from  runners.audio_transcriber import AudioTranscriber
+import aiofiles
+import json
 
 runner_audio_transcriber = bentoml.Runner(
     AudioTranscriber,
@@ -36,19 +39,20 @@ async def handleUpstream(pair: str, request: Request):
         mic_data = bytes()
 
         async with await AsyncNamedPipe.create(pair) as pipe:
-            async for chunk in request.stream():
-                mic_data += chunk
-                text = await runner_audio_transcriber.async_run(io.BytesIO(mic_data))
-                await pipe.write(text["text"] + '\n')
+            #async with aiofiles.open("/tmp/mic", "wb") as mic:
+                async for chunk in request.stream():
+                    #await mic.write(chunk)
+                    mic_data += chunk
+                    text = await runner_audio_transcriber.async_run(io.BytesIO(mic_data))
+                    await pipe.write(text["text"] + '\n')
 
     except Exception as e:
-        print("up :", e)
-        return "exception" + str(e)
+        return JSONResponse(content = jsonable_encoder({ "status" : "exception", "exception" : str(e) }) )
 
-    return ""
+    return JSONResponse(content = jsonable_encoder({ "status" : "ok" }))
 
 @app.get("/down")
-async def handleDownstream(pair:str):
+async def handleDownstream(pair: str, output: str = "pb"):
     async def handleStream(pair):
         try:
             async with await AsyncNamedPipe.open(pair) as pipe:
@@ -56,13 +60,15 @@ async def handleDownstream(pair:str):
                     text = await pipe.readline()
                     if not text:
                         break
-                    event = RecongitionEvent()
-                    event.add_text(text.strip('\n'))
+                    text = text.strip('\n')
+                    if output == "pb":
+                        event = RecongitionEvent()
+                        event.add_text(text)
 
-                    yield event.to_bytes()
-
+                        yield event.to_bytes()
+                    else:
+                        yield json.dumps({ "text" : text })
         except Exception as e:
-            print("down :", e)
-            yield str(e)
+            yield json.dumps({ "exception" : str(e)})
 
     return StreamingResponse(handleStream(pair))
