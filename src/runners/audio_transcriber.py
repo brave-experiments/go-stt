@@ -12,6 +12,8 @@ class AudioTranscriber(bentoml.Runnable):
         device = "cuda" if ctranslate2.get_cuda_device_count() > 0 else "cpu"
         compute_type = "int8_float16" if ctranslate2.get_cuda_device_count() > 0 else "int8"
 
+        print(device, " ", compute_type)
+
         model = "base.en"
         self.model = WhisperModel(model, device=device, compute_type=compute_type)
 

@@ -6,7 +6,6 @@ import bentoml
 from utils.npipe import AsyncNamedPipe
 import io
 from  runners.audio_transcriber import AudioTranscriber
-import aiofiles
 import json
 
 runner_audio_transcriber = bentoml.Runner(
@@ -39,9 +38,9 @@ async def handleUpstream(pair: str, request: Request):
         mic_data = bytes()
 
         async with await AsyncNamedPipe.create(pair) as pipe:
-            #async with aiofiles.open("/tmp/mic", "wb") as mic:
                 async for chunk in request.stream():
-                    #await mic.write(chunk)
+                    if len(chunk) == 0:
+                        break
                     mic_data += chunk
                     text = await runner_audio_transcriber.async_run(io.BytesIO(mic_data))
                     await pipe.write(text["text"] + '\n')
