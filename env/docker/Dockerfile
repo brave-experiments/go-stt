@@ -5,7 +5,7 @@
 # ===========================================
 
 # Block SETUP_BENTO_BASE_IMAGE
-FROM nvidia/cuda:11.6.2-cudnn8-runtime-ubuntu20.04 as base-container
+FROM ghcr.io/opennmt/ctranslate2:4.2.1-ubuntu20.04-cuda12.2 as base-container
 
 ENV LANG=C.UTF-8
 
