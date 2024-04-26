@@ -1,2 +1,6 @@
 runners:
   timeout: 900
+  resources:
+    cpu: 4
+    nvidia.com/gpu: 1
+  workers_per_resource: 10
