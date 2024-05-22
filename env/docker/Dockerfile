@@ -27,7 +27,20 @@ RUN set -eux && \
     apt-get install -q -y --no-install-recommends --allow-remove-essential \
         ca-certificates gnupg2 bash build-essential 
 
-RUN apt install python3.11 python3-pip -y
+RUN \
+    set -eux && \
+    apt-get install -y --no-install-recommends --allow-remove-essential software-properties-common && \
+    # add deadsnakes ppa to install python
+    add-apt-repository ppa:deadsnakes/ppa && \
+    apt-get update -y && \
+    apt-get install -y --no-install-recommends --allow-remove-essential curl python3.11 python3.11-dev python3.11-distutils
+
+RUN ln -sf /usr/bin/python3.11 /usr/bin/python3 && \
+    ln -sf /usr/bin/pip3.11 /usr/bin/pip3
+
+RUN curl -O https://bootstrap.pypa.io/get-pip.py && \
+    python3 get-pip.py && \
+    rm -rf get-pip.py
 
 # Block SETUP_BENTO_USER
 ARG BENTO_USER=bentoml
