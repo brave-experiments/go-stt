@@ -18,7 +18,7 @@ apis:
 docker:
   distro: debian
   python_version: '3.11'
-  cuda_version: 11.6.2
+  cuda_version: 12.1.1
   env:
     BENTOML_CONFIG: src/configuration.yaml
   system_packages: null

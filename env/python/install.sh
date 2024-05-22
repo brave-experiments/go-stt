@@ -16,18 +16,18 @@ BENTOML_VERSION=${BENTOML_VERSION:-1.1.10}
 # Install python packages, prefer installing the requirements.lock.txt file if it exist
 if [ -f "$REQUIREMENTS_LOCK" ]; then
     echo "Installing pip packages from 'requirements.lock.txt'.."
-    pip3 install -r "$REQUIREMENTS_LOCK" "${PIP_ARGS[@]}"
+    pip install -r "$REQUIREMENTS_LOCK" "${PIP_ARGS[@]}"
 else
     if [ -f "$REQUIREMENTS_TXT" ]; then
         echo "Installing pip packages from 'requirements.txt'.."
-        pip3 install -r "$REQUIREMENTS_TXT" "${PIP_ARGS[@]}"
+        pip install -r "$REQUIREMENTS_TXT" "${PIP_ARGS[@]}"
     fi
 fi
 
 # Install user-provided wheels
 if [ -d "$WHEELS_DIR" ]; then
     echo "Installing wheels packaged in Bento.."
-    pip3 install "$WHEELS_DIR"/*.whl "${PIP_ARGS[@]}"
+    pip install "$WHEELS_DIR"/*.whl "${PIP_ARGS[@]}"
 fi
 
 # Install the BentoML from PyPI if it's not already installed
@@ -37,5 +37,5 @@ if python3 -c "import bentoml" &> /dev/null; then
         echo "WARNING: using BentoML version ${existing_bentoml_version}"
     fi
 else
-    pip3 install bentoml=="$BENTOML_VERSION"
+    pip install bentoml=="$BENTOML_VERSION"
 fi

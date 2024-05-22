@@ -46,31 +46,11 @@ info:
   contact:
     email: contact@bentoml.com
     name: BentoML Team
-  description: "# stt:None\n\n[![pypi_status](https://img.shields.io/badge/BentoML-1.1.10-informational)](https://pypi.org/project/BentoML)\n\
-    [![documentation_status](https://readthedocs.org/projects/bentoml/badge/?version=latest)](https://docs.bentoml.com/)\n\
-    [![join_slack](https://badgen.net/badge/Join/BentoML%20Slack/cyan?icon=slack)](https://l.bentoml.com/join-slack-swagger)\n\
-    [![BentoML GitHub Repo](https://img.shields.io/github/stars/bentoml/bentoml?style=social)](https://github.com/bentoml/BentoML)\n\
-    [![Twitter Follow](https://img.shields.io/twitter/follow/bentomlai?label=Follow%20BentoML&style=social)](https://twitter.com/bentomlai)\n\
-    \nThis is a Machine Learning Service created with BentoML.\n| InferenceAPI | Input\
-    \ | Output |\n| ------------ | ----- | ------ |\n| POST [`/process_audio`](#operations-Service_APIs-stt__process_audio)\
-    \ | BytesIOFile | JSON |\n\n\n\n\n## Help\n\n* [\U0001F4D6 Documentation](https://docs.bentoml.com/en/latest/):\
-    \ Learn how to use BentoML.\n* [\U0001F4AC Community](https://l.bentoml.com/join-slack-swagger):\
-    \ Join the BentoML Slack community.\n* [\U0001F41B GitHub Issues](https://github.com/bentoml/BentoML/issues):\
-    \ Report bugs and feature requests.\n* Tip: you can also [customize this README](https://docs.bentoml.com/en/latest/concepts/bento.html#description).\n"
+  description: "# stt:None\n\n[![pypi_status](https://img.shields.io/badge/BentoML-1.1.10-informational)](https://pypi.org/project/BentoML)\n
   title: stt
   version: None
 openapi: 3.0.2
 paths:
-  /healthz:
-    get:
-      description: Health check endpoint. Expecting an empty response with status
-        code <code>200</code> when the service is in health state. The <code>/healthz</code>
-        endpoint is <b>deprecated</b>. (since Kubernetes v1.16)
-      responses:
-        '200':
-          description: Successful Response
-      tags:
-      - Infrastructure
   /livez:
     get:
       description: Health check endpoint for Kubernetes. Healthy endpoint responses
