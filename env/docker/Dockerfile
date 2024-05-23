@@ -75,6 +75,8 @@ RUN chmod +x /home/bentoml/bento/env/docker/entrypoint.sh
 
 USER bentoml
 
+RUN mkdir -p /home/bentoml/tmp/channels
+
 ENTRYPOINT [ "/home/bentoml/bento/env/docker/entrypoint.sh" ]
 
 
