@@ -5,7 +5,7 @@
 # ===========================================
 
 # Block SETUP_BENTO_BASE_IMAGE
-FROM nvidia/cuda:12.4.1-devel-ubuntu22.04 as base-container
+FROM nvidia/cuda:12.2.2-cudnn8-runtime-ubuntu22.04 as base-container
 
 ENV LANG=C.UTF-8
 
