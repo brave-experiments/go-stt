@@ -7,6 +7,8 @@ include:
   - "utils/google_streaming/google_streaming_api_pb2.py"
   - "utils/npipe/__init__.py"
   - "utils/npipe/_posix.py"
+  - "utils/config/config.py"
+  - "utils/service_key/brave_service_key.py"
   - "configuration.yaml"
 python:
   requirements_txt: "requirements.txt"

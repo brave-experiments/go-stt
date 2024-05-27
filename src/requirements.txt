@@ -3,3 +3,6 @@ faster_whisper
 fastapi
 aiofiles
 asyncio
+pydantic
+pydantic-settings
+six
