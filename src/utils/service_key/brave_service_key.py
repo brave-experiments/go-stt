@@ -1,6 +1,7 @@
 import base64
 import hmac
 import re
+from datetime import datetime, timezone
 from binascii import hexlify
 from typing import Optional
 from hashlib import sha256
@@ -53,19 +54,28 @@ def parse_authorization_header(
 def check_stt_request(
     pair: str = Query(),
     authorization: Optional[str] = Header(None),
-    request_key: Optional[str] = Header(None)
+    request_key: Optional[str] = Header(None),
+    request_date: Optional[str] = Header(None)
 ):
-    if not authorization or not request_key or request_key != pair:
+    if not authorization or not request_date or not request_key or request_key != pair:
+        return False
+    try:
+        date = datetime.strptime(request_date, "%a, %d %b %Y %H:%M:%S GMT").replace(tzinfo=timezone.utc)
+        now_date = datetime.now(timezone.utc)
+        time_delta = abs((now_date - date).total_seconds())
+        if time_delta > 120:
+            return False
+    except Exception as e:
         return False
 
     # Parse the keyId, algorithm, signature from the header
     key_id, algorithm, headers, signature_b64 = parse_authorization_header(authorization)
-    if not key_id or not algorithm or not headers or not signature_b64 or algorithm != "hs2019" or headers != "request-key":
+    if not key_id or not algorithm or not headers or not signature_b64 or algorithm != "hs2019" or headers != "request-key request-date":
        return False
 
     # Derive the service key, and expected signature and verify
     service_key = derive_service_key(app_settings.master_services_key_seed, key_id)
-    expected_signing_string = f"request-key: {request_key}"
+    expected_signing_string = f"request-key: {request_key}\nrequest-date: {request_date}"
     expected_signature = hmac.new(service_key, expected_signing_string.encode("utf-8"), sha256).digest()
     expected_signature_b64 = base64.b64encode(expected_signature).decode("utf-8")
 
