@@ -4,8 +4,8 @@ import io
 import bentoml
 from  runners.audio_transcriber import AudioTranscriber
 
-from fastapi import FastAPI, Request, Depends
-from fastapi.responses import StreamingResponse, JSONResponse
+from fastapi import FastAPI, Request, Depends, Cookie
+from fastapi.responses import StreamingResponse, JSONResponse, Response
 from fastapi.encoders import jsonable_encoder
 
 import utils.google_streaming.google_streaming_api_pb2 as speech
@@ -35,10 +35,16 @@ class RecongitionEvent:
 
 app = FastAPI()
 
+@app.get("/sticky")
+async def handleSticky(request:Request, response: Response, sticky = Cookie(None),):
+    pass
+
+
 @app.post("/up")
 async def handleUpstream(
     pair: str,
     request: Request,
+    sticky = Cookie(None),
     is_valid_brave_key = Depends(check_stt_request)
 ):
     if not is_valid_brave_key:
@@ -62,6 +68,8 @@ async def handleUpstream(
 @app.get("/down")
 async def handleDownstream(
     pair: str,
+    request: Request,
+    sticky = Cookie(None),
     output: str = "pb",
     is_valid_brave_key = Depends(check_stt_request)
 ):

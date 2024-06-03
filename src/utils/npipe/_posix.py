@@ -11,23 +11,31 @@ class AsyncChannelWriter:
         self._fd = fd
         self._dir = dir
 
+    def __del__(self):
+        try:
+            asyncio.get_event_loop().create_task(self.close())
+        except:
+            pass
+
     async def open(pair: str, timeout: int = 10000):
         loop = asyncio.get_running_loop()
 
         try:
-            dir = await loop.run_in_executor(None, tempfile.mkdtemp, None, pair + "-", Path.home() / "tmp" / "channels")
+            dir = tempfile.mkdtemp(None, pair + "-", Path.home() / "tmp" / "channels")
             dir = Path(dir)
-            await loop.run_in_executor(None, os.mkfifo, dir / "pipe")
+            os.mkfifo(dir / "pipe")
             async with asyncio.timeout(timeout / 1000.0):
                 fd = await aiofiles.open(dir / "pipe", "w")
                 return AsyncChannelWriter(fd, dir)
 
-        except asyncio.TimeoutError:
+        except:
             await aiofiles.os.unlink(dir / "pipe")
             await aiofiles.os.rmdir(dir)
             raise Exception("No consumer")
 
     async def close(self):
+        if not self._fd:
+            return
         await self._fd.close()
         await aiofiles.os.unlink(self._dir / "pipe")
         await aiofiles.os.rmdir(self._dir)
@@ -54,6 +62,12 @@ class AsyncChannelReader:
     def __init__(self, fd):
         self._fd = fd
 
+    def __del__(self):
+        try:
+            asyncio.get_event_loop().create_task(self.close())
+        except:
+            pass
+
     async def open(pair: str, timeout: int = 10000):
         fd = None
         try:
@@ -76,7 +90,10 @@ class AsyncChannelReader:
         return AsyncChannelReader(fd)
 
     async def close(self):
+        if not self._fd:
+            return
         await self._fd.close()
+        self._fd = None
 
     async def __aenter__(self):
         return self
