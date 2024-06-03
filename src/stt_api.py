@@ -35,8 +35,9 @@ class RecongitionEvent:
 
 app = FastAPI()
 
+
 @app.get("/sticky")
-async def handleSticky(request:Request, response: Response, sticky = Cookie(None),):
+async def handleSticky():
     pass
 
 
@@ -44,7 +45,6 @@ async def handleSticky(request:Request, response: Response, sticky = Cookie(None
 async def handleUpstream(
     pair: str,
     request: Request,
-    sticky = Cookie(None),
     is_valid_brave_key = Depends(check_stt_request)
 ):
     if not is_valid_brave_key:
@@ -68,8 +68,6 @@ async def handleUpstream(
 @app.get("/down")
 async def handleDownstream(
     pair: str,
-    request: Request,
-    sticky = Cookie(None),
     output: str = "pb",
     is_valid_brave_key = Depends(check_stt_request)
 ):

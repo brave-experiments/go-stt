@@ -18,15 +18,12 @@ class AsyncChannelWriter:
             pass
 
     async def open(pair: str, timeout: int = 10000):
-        loop = asyncio.get_running_loop()
-
         try:
             dir = tempfile.mkdtemp(None, pair + "-", Path.home() / "tmp" / "channels")
             dir = Path(dir)
             os.mkfifo(dir / "pipe")
-            async with asyncio.timeout(timeout / 1000.0):
-                fd = await aiofiles.open(dir / "pipe", "w")
-                return AsyncChannelWriter(fd, dir)
+            fd = await asyncio.wait_for(aiofiles.open(dir / "pipe", "w"), timeout / 1000.0)
+            return AsyncChannelWriter(fd, dir)
 
         except:
             await aiofiles.os.unlink(dir / "pipe")
@@ -51,10 +48,6 @@ class AsyncChannelWriter:
  
     async def write(self, data):
         await self._fd.write(data)
-        await self._fd.flush()
-
-    async def writeline(self, data):
-        await self._fd.writelines([data])
         await self._fd.flush()
 
 
