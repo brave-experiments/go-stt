@@ -9,14 +9,15 @@ from fastapi.responses import StreamingResponse, JSONResponse, Response
 from fastapi.encoders import jsonable_encoder
 
 import utils.google_streaming.google_streaming_api_pb2 as speech
-from utils.npipe import AsyncChannelWriter, AsyncChannelReader
 from utils.service_key.brave_service_key import check_stt_request
 
+import utils.ipc as ipc
 
 runner_audio_transcriber = bentoml.Runner(
     AudioTranscriber,
     name="audio_transcriber",
 )
+
 
 class RecongitionEvent:
     def __init__(self):
@@ -52,13 +53,13 @@ async def handleUpstream(
 
     try:
         mic_data = bytes()
-        async with await AsyncChannelWriter.open(pair) as pipe:
-                async for chunk in request.stream():
-                    if len(chunk) == 0:
-                        break
-                    mic_data += chunk
-                    text = await runner_audio_transcriber.async_run(io.BytesIO(mic_data))
-                    await pipe.write(text["text"] + '\n')
+        async with ipc.client.Publisher(pair) as pipe:
+            async for chunk in request.stream():
+                if len(chunk) == 0:
+                    break
+                mic_data += chunk
+                text = await runner_audio_transcriber.async_run(io.BytesIO(mic_data))
+                await pipe.push(ipc.messages.Text(text["text"], False))
 
     except Exception as e:
         return JSONResponse(content = jsonable_encoder({ "status" : "exception", "exception" : str(e) }) )
@@ -76,19 +77,18 @@ async def handleDownstream(
 
     async def handleStream(pair):
         try:
-            async with await AsyncChannelReader.open(pair) as pipe:
+            async with ipc.client.Subscriber(pair) as pipe:
                 while True:
-                    text = await pipe.readline()
-                    if not text:
+                    r = await pipe.pull()
+                    if not r:
                         break
-                    text = text.strip('\n')
                     if output == "pb":
                         event = RecongitionEvent()
-                        event.add_text(text)
+                        event.add_text(r.text)
 
                         yield event.to_bytes()
                     else:
-                        yield json.dumps({ "text" : text })
+                        yield json.dumps({ "text" : r.text })
         except Exception as e:
             yield json.dumps({ "exception" : str(e)})
 
