@@ -9,7 +9,9 @@ class AudioTranscriber(bentoml.Runnable):
 
     def __init__(self):
         device = "cuda" if ctranslate2.get_cuda_device_count() > 0 else "cpu"
-        compute_type = "int8_float16" if ctranslate2.get_cuda_device_count() > 0 else "int8"
+        compute_type = (
+            "int8_float16" if ctranslate2.get_cuda_device_count() > 0 else "int8"
+        )
 
         print(device, " ", compute_type)
 
