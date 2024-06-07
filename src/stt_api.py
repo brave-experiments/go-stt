@@ -2,7 +2,7 @@ import json
 import io
 
 import bentoml
-from  runners.audio_transcriber import AudioTranscriber
+from runners.audio_transcriber import AudioTranscriber
 
 from fastapi import FastAPI, Request, Depends, Cookie
 from fastapi.responses import StreamingResponse, JSONResponse, Response
@@ -34,6 +34,7 @@ class RecongitionEvent:
         message = self._event.SerializeToString()
         return len(message).to_bytes(4, signed=False) + message
 
+
 app = FastAPI()
 
 
@@ -44,12 +45,12 @@ async def handleSticky():
 
 @app.post("/up")
 async def handleUpstream(
-    pair: str,
-    request: Request,
-    is_valid_brave_key = Depends(check_stt_request)
+    pair: str, request: Request, is_valid_brave_key=Depends(check_stt_request)
 ):
     if not is_valid_brave_key:
-        return JSONResponse(content = jsonable_encoder({ "status" : "Invalid Brave Service Key" }))
+        return JSONResponse(
+            content=jsonable_encoder({"status": "Invalid Brave Service Key"})
+        )
 
     try:
         mic_data = bytes()
@@ -62,18 +63,21 @@ async def handleUpstream(
                 await pipe.push(ipc.messages.Text(text["text"], False))
 
     except Exception as e:
-        return JSONResponse(content = jsonable_encoder({ "status" : "exception", "exception" : str(e) }) )
+        return JSONResponse(
+            content=jsonable_encoder({"status": "exception", "exception": str(e)})
+        )
 
-    return JSONResponse(content = jsonable_encoder({ "status" : "ok" }))
+    return JSONResponse(content=jsonable_encoder({"status": "ok"}))
+
 
 @app.get("/down")
 async def handleDownstream(
-    pair: str,
-    output: str = "pb",
-    is_valid_brave_key = Depends(check_stt_request)
+    pair: str, output: str = "pb", is_valid_brave_key=Depends(check_stt_request)
 ):
     if not is_valid_brave_key:
-        return JSONResponse(content = jsonable_encoder({ "status" : "Invalid Brave Service Key" }))
+        return JSONResponse(
+            content=jsonable_encoder({"status": "Invalid Brave Service Key"})
+        )
 
     async def handleStream(pair):
         try:
@@ -88,8 +92,8 @@ async def handleDownstream(
 
                         yield event.to_bytes()
                     else:
-                        yield json.dumps({ "text" : r.text })
+                        yield json.dumps({"text": r.text})
         except Exception as e:
-            yield json.dumps({ "exception" : str(e)})
+            yield json.dumps({"exception": str(e)})
 
     return StreamingResponse(handleStream(pair))

@@ -1,8 +1,7 @@
 import bentoml
 import ctranslate2
 from faster_whisper import WhisperModel
-import io
-import numpy as np
+
 
 class AudioTranscriber(bentoml.Runnable):
     SUPPORTED_RESOURCES = ("nvidia.com/gpu", "cpu")
@@ -19,10 +18,12 @@ class AudioTranscriber(bentoml.Runnable):
 
     @bentoml.Runnable.method(batchable=False)
     def transcribe_audio(self, audio):
-        segments, info = self.model.transcribe(audio, vad_filter=True, vad_parameters=dict(min_silence_duration_ms=500))
+        segments, info = self.model.transcribe(
+            audio, vad_filter=True, vad_parameters=dict(min_silence_duration_ms=500)
+        )
 
         text = ""
         for segment in segments:
             text += segment.text
 
-        return { "text" : text }
+        return {"text": text}

@@ -8,6 +8,7 @@ from hashlib import sha256
 from fastapi import Header, Query
 from ..config.config import app_settings
 
+
 # HKDF-SHA256 with L fixed to 32
 def hkdf_sha256_l_32(ikm, info, salt):
     # HKDF-Extract(salt, IKM) -> PRK
@@ -39,6 +40,7 @@ def derive_service_key(master_services_key_seed, key_id, service="stt"):
         )
     )
 
+
 def parse_authorization_header(
     header: str,
 ) -> (Optional[str], Optional[str], Optional[str], Optional[str]):
@@ -51,16 +53,19 @@ def parse_authorization_header(
         return result.group(1), result.group(2), result.group(3), result.group(4)
     return None, None, None, None
 
+
 def check_stt_request(
     pair: str = Query(),
     authorization: Optional[str] = Header(None),
     request_key: Optional[str] = Header(None),
-    request_date: Optional[str] = Header(None)
+    request_date: Optional[str] = Header(None),
 ):
     if not authorization or not request_date or not request_key or request_key != pair:
         return False
     try:
-        date = datetime.strptime(request_date, "%a, %d %b %Y %H:%M:%S GMT").replace(tzinfo=timezone.utc)
+        date = datetime.strptime(request_date, "%a, %d %b %Y %H:%M:%S GMT").replace(
+            tzinfo=timezone.utc
+        )
         now_date = datetime.now(timezone.utc)
         time_delta = abs((now_date - date).total_seconds())
         if time_delta > 120:
@@ -69,19 +74,30 @@ def check_stt_request(
         return False
 
     # Parse the keyId, algorithm, signature from the header
-    key_id, algorithm, headers, signature_b64 = parse_authorization_header(authorization)
-    if not key_id or not algorithm or not headers or not signature_b64 or algorithm != "hs2019" or headers != "request-key request-date":
-       return False
+    key_id, algorithm, headers, signature_b64 = parse_authorization_header(
+        authorization
+    )
+    if (
+        not key_id
+        or not algorithm
+        or not headers
+        or not signature_b64
+        or algorithm != "hs2019"
+        or headers != "request-key request-date"
+    ):
+        return False
 
     # Derive the service key, and expected signature and verify
     service_key = derive_service_key(app_settings.master_services_key_seed, key_id)
-    expected_signing_string = f"request-key: {request_key}\nrequest-date: {request_date}"
-    expected_signature = hmac.new(service_key, expected_signing_string.encode("utf-8"), sha256).digest()
+    expected_signing_string = (
+        f"request-key: {request_key}\nrequest-date: {request_date}"
+    )
+    expected_signature = hmac.new(
+        service_key, expected_signing_string.encode("utf-8"), sha256
+    ).digest()
     expected_signature_b64 = base64.b64encode(expected_signature).decode("utf-8")
 
     if not hmac.compare_digest(expected_signature_b64, signature_b64):
         return False
-    
-    return True
 
-    
+    return True

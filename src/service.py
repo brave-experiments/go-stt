@@ -6,19 +6,20 @@ from bentoml.io import JSON, File
 
 from stt_api import app, runner_audio_transcriber
 
-from utils.ipc import server
+import ipc_server
 
 svc = bentoml.Service(
     "stt",
-    runners=[ runner_audio_transcriber ],
+    runners=[runner_audio_transcriber],
 )
 
 svc.mount_asgi_app(app)
 
+
 @svc.on_deployment
 def on_deployment():
     if not os.fork():
-        server.start_ipc_server()
+        ipc_server.start_ipc_server()
 
 
 @svc.api(input=File(), output=JSON())

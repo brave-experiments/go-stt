@@ -25,7 +25,7 @@ RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloa
 RUN set -eux && \
     apt-get update -y && \
     apt-get install -q -y --no-install-recommends --allow-remove-essential \
-        ca-certificates gnupg2 bash build-essential 
+    ca-certificates gnupg2 bash build-essential 
 
 RUN \
     set -eux && \
