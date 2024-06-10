@@ -19,20 +19,16 @@ runner_audio_transcriber = bentoml.Runner(
 )
 
 
-class RecongitionEvent:
-    def __init__(self):
-        self._event = speech.SpeechRecognitionEvent()
+def TextToProtoMessage(text: ipc.messages.Text):
+    event = speech.SpeechRecognitionEvent()
+    rr = speech.SpeechRecognitionResult()
+    rr.stability = 1.0
+    rr.final = text.final
+    rr.alternative.append(speech.SpeechRecognitionAlternative(transcript=text.text))
+    event.result.append(rr)
 
-    def add_text(self, text: str):
-        r = speech.SpeechRecognitionResult()
-        r.stability = 1.0
-        r.final = False
-        r.alternative.append(speech.SpeechRecognitionAlternative(transcript=text))
-        self._event.result.append(r)
-
-    def to_bytes(self):
-        message = self._event.SerializeToString()
-        return len(message).to_bytes(4, signed=False) + message
+    proto = event.SerializeToString()
+    return len(proto).to_bytes(4, signed=False) + proto
 
 
 app = FastAPI()
@@ -54,13 +50,21 @@ async def handleUpstream(
 
     try:
         mic_data = bytes()
+        text = ""
         async with ipc.client.Publisher(pair) as pipe:
-            async for chunk in request.stream():
-                if len(chunk) == 0:
-                    break
-                mic_data += chunk
-                text = await runner_audio_transcriber.async_run(io.BytesIO(mic_data))
-                await pipe.push(ipc.messages.Text(text["text"], False))
+            try:
+                async for chunk in request.stream():
+                    if len(chunk) == 0:
+                        break
+                    mic_data += chunk
+                    transciption = await runner_audio_transcriber.async_run(io.BytesIO(mic_data))
+                    text = transciption["text"]
+                    if text:
+                        await pipe.push(ipc.messages.Text(text, False))
+            finally:
+                if text:
+                    await pipe.push(ipc.messages.Text(text, True))
+                raise
 
     except Exception as e:
         return JSONResponse(
@@ -83,16 +87,13 @@ async def handleDownstream(
         try:
             async with ipc.client.Subscriber(pair) as pipe:
                 while True:
-                    r = await pipe.pull()
-                    if not r:
+                    text = await pipe.pull()
+                    if not text:
                         break
                     if output == "pb":
-                        event = RecongitionEvent()
-                        event.add_text(r.text)
-
-                        yield event.to_bytes()
+                        yield TextToProtoMessage(text)
                     else:
-                        yield json.dumps({"text": r.text})
+                        yield json.dumps({"text": text.text})
         except Exception as e:
             yield json.dumps({"exception": str(e)})
 
