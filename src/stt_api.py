@@ -64,7 +64,6 @@ async def handleUpstream(
             finally:
                 if text:
                     await pipe.push(ipc.messages.Text(text, True))
-                raise
 
     except Exception as e:
         return JSONResponse(
