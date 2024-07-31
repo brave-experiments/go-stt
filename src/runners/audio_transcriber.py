@@ -15,7 +15,7 @@ class AudioTranscriber(bentoml.Runnable):
 
         print(device, " ", compute_type)
 
-        model = "distil-large-v3"
+        model = "large-v3"
         self.model = WhisperModel(model, device=device, compute_type=compute_type)
 
     @bentoml.Runnable.method(batchable=False)
