@@ -21,7 +21,10 @@ class AudioTranscriber(bentoml.Runnable):
     @bentoml.Runnable.method(batchable=False)
     def transcribe_audio(self, audio):
         segments, info = self.model.transcribe(
-            audio, vad_filter=True, vad_parameters=dict(min_silence_duration_ms=500)
+            audio,
+            vad_filter=True,
+            vad_parameters=dict(min_silence_duration_ms=500),
+            language="en",
         )
 
         text = ""
