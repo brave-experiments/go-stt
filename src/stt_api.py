@@ -41,7 +41,10 @@ async def handleSticky():
 
 @app.post("/up")
 async def handleUpstream(
-    pair: str, request: Request, is_valid_brave_key=Depends(check_stt_request)
+    pair: str,
+    request: Request,
+    lang: str = "en",
+    is_valid_brave_key=Depends(check_stt_request),
 ):
     if not is_valid_brave_key:
         return JSONResponse(
@@ -57,7 +60,9 @@ async def handleUpstream(
                     if len(chunk) == 0:
                         break
                     mic_data += chunk
-                    transciption = await runner_audio_transcriber.async_run(io.BytesIO(mic_data))
+                    transciption = await runner_audio_transcriber.async_run(
+                        io.BytesIO(mic_data), lang
+                    )
                     text = transciption["text"]
                     if text:
                         await pipe.push(ipc.messages.Text(text, False))

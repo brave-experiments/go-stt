@@ -19,12 +19,17 @@ class AudioTranscriber(bentoml.Runnable):
         self.model = WhisperModel(model, device=device, compute_type=compute_type)
 
     @bentoml.Runnable.method(batchable=False)
-    def transcribe_audio(self, audio):
+    def transcribe_audio(self, audio, lang):
+        if len(lang) < 2:
+            lang = "en"
+        else:
+            lang = lang[0:2]
+
         segments, info = self.model.transcribe(
             audio,
             vad_filter=True,
             vad_parameters=dict(min_silence_duration_ms=500),
-            language="en",
+            language=lang,
         )
 
         text = ""
