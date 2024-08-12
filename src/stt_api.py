@@ -1,5 +1,6 @@
 import json
 import io
+from datetime import datetime
 
 import bentoml
 from runners.audio_transcriber import AudioTranscriber
@@ -60,12 +61,19 @@ async def handleUpstream(
                     if len(chunk) == 0:
                         break
                     mic_data += chunk
+                    process_time = datetime.now()
                     transciption = await runner_audio_transcriber.async_run(
                         io.BytesIO(mic_data), lang
                     )
+                    process_time = datetime.now() - process_time
+
                     text = transciption["text"]
                     if text:
-                        await pipe.push(ipc.messages.Text(text, False))
+                        await pipe.push(
+                            ipc.messages.Text(
+                                text, False, len(mic_data), process_time.total_seconds()
+                            )
+                        )
             finally:
                 if text:
                     await pipe.push(ipc.messages.Text(text, True))
@@ -97,7 +105,14 @@ async def handleDownstream(
                     if output == "pb":
                         yield TextToProtoMessage(text)
                     else:
-                        yield json.dumps({"text": text.text})
+                        yield json.dumps(
+                            {
+                                "text": text.text,
+                                "final": text.final,
+                                "buffer": text.buffer_len,
+                                "process_time": text.process_time,
+                            }
+                        )
         except Exception as e:
             yield json.dumps({"exception": str(e)})
 
