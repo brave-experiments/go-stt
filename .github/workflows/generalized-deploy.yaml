@@ -4,6 +4,7 @@ on:
       - main
       - dev
       - bentoml
+      - batching
 
 name: stt deployments
 jobs:
