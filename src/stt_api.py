@@ -3,10 +3,14 @@ import io
 from datetime import datetime
 
 import bentoml
-from runners.audio_transcriber import AudioTranscriber
+from runners.audio_transcriber import (
+    AudioTranscriber,
+    BatchableAudioTranscriber,
+    BatchInput,
+)
 
-from fastapi import FastAPI, Request, Depends, Cookie
-from fastapi.responses import StreamingResponse, JSONResponse, Response
+from fastapi import FastAPI, Request, Depends
+from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.encoders import jsonable_encoder
 
 import utils.google_streaming.google_streaming_api_pb2 as speech
@@ -15,8 +19,9 @@ from utils.service_key.brave_service_key import check_stt_request
 import utils.ipc as ipc
 
 runner_audio_transcriber = bentoml.Runner(
-    AudioTranscriber,
+    BatchableAudioTranscriber,
     name="audio_transcriber",
+    max_batch_size=10,
 )
 
 
@@ -63,11 +68,11 @@ async def handleUpstream(
                     mic_data += chunk
                     process_time = datetime.now()
                     transciption = await runner_audio_transcriber.async_run(
-                        io.BytesIO(mic_data), lang
+                        [BatchInput(audio=mic_data, lang=lang, pair=pair)]
                     )
                     process_time = datetime.now() - process_time
 
-                    text = transciption["text"]
+                    text = transciption[0]
                     if text:
                         await pipe.push(
                             ipc.messages.Text(
