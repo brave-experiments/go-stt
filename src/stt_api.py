@@ -21,7 +21,7 @@ import utils.ipc as ipc
 runner_audio_transcriber = bentoml.Runner(
     BatchableAudioTranscriber,
     name="audio_transcriber",
-    max_batch_size=10,
+    max_batch_size=32,
 )
 
 

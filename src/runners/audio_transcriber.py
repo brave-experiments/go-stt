@@ -140,7 +140,7 @@ class BatchableAudioTranscriber(bentoml.Runnable):
         )
 
     def transcribe(self, audios):
-        result = self.model.transcribe(audios, batch_size=10, language="en")
+        result = self.model.transcribe(audios, batch_size=16, language="en")
         return result["segments"]
 
     @bentoml.Runnable.method(batchable=True)
