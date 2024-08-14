@@ -130,9 +130,7 @@ class BatchableAudioTranscriber(bentoml.Runnable):
 
     def __init__(self):
         self.device = "cuda" if ctranslate2.get_cuda_device_count() > 0 else "cpu"
-        compute_type = (
-            "int8_float16" if ctranslate2.get_cuda_device_count() > 0 else "int8"
-        )
+        compute_type = "float16" if ctranslate2.get_cuda_device_count() > 0 else "int8"
 
         print(self.device, " ", compute_type)
 
@@ -142,13 +140,7 @@ class BatchableAudioTranscriber(bentoml.Runnable):
         )
 
     def transcribe(self, audios):
-        result = self.model.transcribe(
-            audios,
-            batch_size=10,
-            language="en",
-            print_progress=True,
-            combined_progress=True,
-        )
+        result = self.model.transcribe(audios, batch_size=10, language="en")
         return result["segments"]
 
     @bentoml.Runnable.method(batchable=True)
@@ -174,10 +166,7 @@ class BatchableAudioTranscriber(bentoml.Runnable):
         segments = self.transcribe(audio_batch)
 
         result = []
-        print("inputs ", len(inputs))
         for segment in segments:
-            print(segment)
-
             if segment["start"] + 0.1 >= 30 * len(result):
                 result.append("")
             if segment["end"] < 30 * (len(result)):
