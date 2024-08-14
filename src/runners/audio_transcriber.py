@@ -136,7 +136,10 @@ class BatchableAudioTranscriber(bentoml.Runnable):
 
         model = "medium"
         self.model = whisper.load_model(
-            whisper_arch=model, device=self.device, compute_type=compute_type
+            whisper_arch=model,
+            device=self.device,
+            compute_type=compute_type,
+            download_root="/home/bentoml/models",
         )
 
     def transcribe(self, audios):
