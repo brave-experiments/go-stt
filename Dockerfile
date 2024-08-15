@@ -75,4 +75,7 @@ RUN chmod +x /home/bentoml/bento/env/docker/entrypoint.sh
 
 USER bentoml
 
+RUN mkdir /home/bentoml/.cache
+RUN mkdir /home/bentoml/.cache/torch
+
 ENTRYPOINT [ "/home/bentoml/bento/env/docker/entrypoint.sh" ]
