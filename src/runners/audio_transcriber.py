@@ -134,7 +134,7 @@ class BatchableAudioTranscriber(bentoml.Runnable):
 
         print(self.device, " ", compute_type)
 
-        model = "medium"
+        model = "base.en"
         self.model = whisper.load_model(
             whisper_arch=model,
             device=self.device,
