@@ -7,4 +7,3 @@ pydantic
 pydantic-settings
 six
 msgspec
-whisperx

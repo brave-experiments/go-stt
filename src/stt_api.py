@@ -21,7 +21,7 @@ import utils.ipc as ipc
 runner_audio_transcriber = bentoml.Runner(
     BatchableAudioTranscriber,
     name="audio_transcriber",
-    max_batch_size=32,
+    max_batch_size=16,
 )
 
 
@@ -72,11 +72,28 @@ async def handleUpstream(
                     )
                     process_time = datetime.now() - process_time
 
-                    text = transciption[0]
-                    if text:
+                    out = transciption[0]
+                    print(
+                        pair,
+                        " : ",
+                        out.batched_count,
+                        "",
+                        out.merge_audio_time,
+                        " ",
+                        out.transcribe_time,
+                        " ",
+                        out.restore_time,
+                    )
+
+                    if out.text:
                         await pipe.push(
                             ipc.messages.Text(
-                                text, False, len(mic_data), process_time.total_seconds()
+                                out.text,
+                                False,
+                                len(mic_data),
+                                out.merge_audio_time
+                                + out.transcribe_time
+                                + out.restore_time,
                             )
                         )
             finally:

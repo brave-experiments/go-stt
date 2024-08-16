@@ -2,4 +2,4 @@ runners:
   resources:
     cpu: 4
     nvidia.com/gpu: 1
-  workers_per_resource: 6
+  workers_per_resource: 12

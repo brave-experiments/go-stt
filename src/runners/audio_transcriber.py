@@ -42,6 +42,8 @@ class AudioTranscriber(bentoml.Runnable):
 from pydantic import BaseModel
 import numpy as np
 import io
+from datetime import datetime
+from faster_whisper.vad import get_speech_timestamps, collect_chunks
 
 
 class BatchInput(BaseModel):
@@ -50,129 +52,114 @@ class BatchInput(BaseModel):
     lang: str = "en"
 
 
-"""
+class BatchOutput(BaseModel):
+    text: str
+    batched_count: int
+    merge_audio_time: float
+    transcribe_time: float
+    restore_time: float
+
+
+class BatchItem(BaseModel):
+    start_time: float
+    end_time: float
+    chunks_count: int
+    transcription: str = ""
+
+    def add(self, word):
+        if (
+            self.chunks_count > 0
+            and word.start >= self.start_time
+            and word.end <= self.end_time
+        ):
+            self.transcription += word.word
+
+
 class BatchableAudioTranscriber(bentoml.Runnable):
     SUPPORTED_RESOURCES = ("nvidia.com/gpu", "cpu")
     SUPPORTS_CPU_MULTI_THREADING = True
 
     def __init__(self):
         device = "cuda" if ctranslate2.get_cuda_device_count() > 0 else "cpu"
-        compute_type = (
-            "int8_float16" if ctranslate2.get_cuda_device_count() > 0 else "int8"
-        )
+        compute_type = "float16" if ctranslate2.get_cuda_device_count() > 0 else "int8"
 
         print(device, " ", compute_type)
 
         model = "base.en"
-        self.model = whisper.load_model(model_identifier=model, backend='CTranslate2')
+        self.model = WhisperModel(model, device=device, compute_type=compute_type)
 
-    def transcribe(self, audio):
+    def transcribe(self, audios):
         segments, info = self.model.transcribe(
-            audio,
-            vad_filter=True,
-            vad_parameters=dict(min_silence_duration_ms=500),
-            condition_on_previous_text=False,
+            audios,
+            vad_filter=False,
+            vad_parameters=dict(min_silence_duration_ms=250),
             language="en",
+            condition_on_previous_text=False,
+            word_timestamps=True,
+            no_speech_threshold=10,
         )
-
         return segments
 
     @bentoml.Runnable.method(batchable=True)
     def transcribe_audio(self, inputs: list[BatchInput]) -> list[str]:
-        if len(inputs) == 1:
-            segments = self.transcribe(io.BytesIO(inputs[0].audio))
-
-            text = ""
-            for segment in segments:
-                text += segment.text
-            return [text]
-
-        MAX_SILENCE = 16000 * 30
-
-        # merging audio
-        audio_batch = np.ndarray(1, dtype=np.float32)
-        for input in inputs:
-            wav = decode_audio(io.BytesIO(input.audio))
-            wav = np.append(wav, np.zeros(MAX_SILENCE - len(wav), dtype=np.float32))
-            audio_batch = np.append(audio_batch, wav)
-
-        segments, info = self.model.g(
-            audio_batch,
-            vad_filter=True,
-            vad_parameters=dict(min_silence_duration_ms=250),
-            condition_on_previous_text=False,
-            word_timestamps=True,
-            language="en",
-        )
-
         result = []
-        print("inputs ", len(inputs))
-        for segment in segments:
-            print(segment.start, " -> ", segment.end, " : ", segment.text)
-
-            for word in segment.words:
-                print("   ", word.start, " -> ", word.end, " : ", word)
-
-            if segment.start >= 30 * len(result):
-                result.append("")
-            if segment.end < 30 * (len(result)):
-                result[-1] += segment.text
-
-        return result
-"""
-
-import whisperx as whisper
-
-
-class BatchableAudioTranscriber(bentoml.Runnable):
-    SUPPORTED_RESOURCES = ("nvidia.com/gpu", "cpu")
-    SUPPORTS_CPU_MULTI_THREADING = True
-
-    def __init__(self):
-        self.device = "cuda" if ctranslate2.get_cuda_device_count() > 0 else "cpu"
-        compute_type = "float16" if ctranslate2.get_cuda_device_count() > 0 else "int8"
-
-        print(self.device, " ", compute_type)
-
-        model = "base.en"
-        self.model = whisper.load_model(
-            whisper_arch=model,
-            device=self.device,
-            compute_type=compute_type,
-            download_root="/home/bentoml/models",
-        )
-
-    def transcribe(self, audios):
-        result = self.model.transcribe(audios, batch_size=8, language="en")
-        return result["segments"]
-
-    @bentoml.Runnable.method(batchable=True)
-    def transcribe_audio(self, inputs: list[BatchInput]) -> list[str]:
-        if len(inputs) == 1:
-            segments = self.transcribe(decode_audio(io.BytesIO(inputs[0].audio)))
-
-            text = ""
-            for segment in segments:
-                text += segment["text"]
-            return [text]
 
         # merging audio
-        MAX_SILENCE = 16000 * 30
+        ts = datetime.now()
 
-        # merging audio
+        batch_list = []
         audio_batch = np.ndarray(1, dtype=np.float32)
         for input in inputs:
             wav = decode_audio(io.BytesIO(input.audio))
-            wav = np.append(wav, np.zeros(MAX_SILENCE - len(wav), dtype=np.float32))
-            audio_batch = np.append(audio_batch, wav)
+            chunks = get_speech_timestamps(wav)
+            if len(chunks) == 0:
+                batch_list.append(
+                    BatchItem(
+                        start_time=len(audio_batch) / 16000.0,
+                        end_time=len(audio_batch) / 16000.0,
+                        chunks_count=0,
+                    )
+                )
+            else:
+                wav = collect_chunks(wav, chunks=chunks)
+                wav = np.append(wav, np.zeros(16000, dtype=np.float32))
+                batch_list.append(
+                    BatchItem(
+                        start_time=len(audio_batch) / 16000.0,
+                        end_time=(len(audio_batch) + len(wav)) / 16000.0,
+                        chunks_count=len(chunks),
+                    )
+                )
+                audio_batch = np.append(audio_batch, wav)
 
+        for item in batch_list:
+            print(item)
+
+        merge_time = (datetime.now() - ts).total_seconds()
+
+        ts = datetime.now()
         segments = self.transcribe(audio_batch)
+        transcribe_time = (datetime.now() - ts).total_seconds()
 
-        result = []
-        for segment in segments:
-            if segment["start"] + 0.1 >= 30 * len(result):
-                result.append("")
-            if segment["end"] < 30 * (len(result)):
-                result[-1] += segment["text"]
+        ts = datetime.now()
+        output = [segment for segment in segments]
+
+        for segment in output:
+            for word in segment.words:
+                for item in batch_list:
+                    item.add(word)
+
+        restore_time = (datetime.now() - ts).total_seconds()
+
+        for item in batch_list:
+            result.append(
+                BatchOutput(
+                    text=item.transcription,
+                    batched_count=len(inputs),
+                    merge_audio_time=merge_time,
+                    transcribe_time=transcribe_time,
+                    restore_time=restore_time,
+                )
+            )
 
         return result
