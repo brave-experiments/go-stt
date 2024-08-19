@@ -187,7 +187,7 @@ class BatchableAudioTranscriber(bentoml.Runnable):
 
     def transcribe(self, audios):
         input_values = self.processor(
-            audios, return_tensors="pt", sampling_rate=16000
+            audios, return_tensors="pt", sampling_rate=16000, padding=True
         ).input_values.cuda()
 
         with torch.no_grad():
