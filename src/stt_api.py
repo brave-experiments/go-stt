@@ -70,7 +70,7 @@ async def handleUpstream(
                     transciption = await runner_audio_transcriber.async_run(
                         [BatchInput(audio=mic_data, lang=lang, pair=pair)]
                     )
-                    process_time = datetime.now() - process_time
+                    process_time = (datetime.now() - process_time).total_seconds()
 
                     out = transciption[0]
                     print(
@@ -94,6 +94,7 @@ async def handleUpstream(
                                 out.merge_audio_time
                                 + out.transcribe_time
                                 + out.restore_time,
+                                process_time,
                             )
                         )
             finally:
@@ -133,6 +134,7 @@ async def handleDownstream(
                                 "final": text.final,
                                 "buffer": text.buffer_len,
                                 "process_time": text.process_time,
+                                "time": text.time,
                             }
                         )
         except Exception as e:

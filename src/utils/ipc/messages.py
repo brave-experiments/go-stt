@@ -19,6 +19,7 @@ class Text(msgspec.Struct, tag=True):
     final: bool
     buffer_len: int = 0
     process_time: float = 0
+    time: float = 0
 
 
 Request = Publish | Subscribe | Ready | Text

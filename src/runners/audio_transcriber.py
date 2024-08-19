@@ -74,7 +74,6 @@ class BatchItem(BaseModel):
         ):
             self.transcription += word.word
 
-
 """
 class BatchableAudioTranscriber(bentoml.Runnable):
     SUPPORTED_RESOURCES = ("nvidia.com/gpu", "cpu")
@@ -231,7 +230,6 @@ class BatchableAudioTranscriber(bentoml.Runnable):
             )
             for text in segments
         ]
-
 
 """
 from transformers import WhisperProcessor, WhisperForConditionalGeneration
