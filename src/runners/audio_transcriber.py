@@ -167,8 +167,8 @@ class BatchableAudioTranscriber(bentoml.Runnable):
 
 """
 
-"""
-from transformers import Wav2Vec2ForCTC, Wav2Vec2Processor, WhisperProcessor, 
+
+from transformers import Wav2Vec2ForCTC, Wav2Vec2Processor
 import torch
 from itertools import groupby
 
@@ -180,10 +180,10 @@ class BatchableAudioTranscriber(bentoml.Runnable):
     def __init__(self):
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.processor = Wav2Vec2Processor.from_pretrained(
-            "facebook/wav2vec2-base-960h"
+            "facebook/wav2vec2-large-960h-lv60-self"
         )
         self.model = Wav2Vec2ForCTC.from_pretrained(
-            "facebook/wav2vec2-base-960h"
+            "facebook/wav2vec2-large-960h-lv60-self"
         ).cuda()
 
     def transcribe(self, audios):
@@ -231,8 +231,9 @@ class BatchableAudioTranscriber(bentoml.Runnable):
             )
             for text in segments
         ]
-"""
 
+
+"""
 from transformers import WhisperProcessor, WhisperForConditionalGeneration
 import torch
 
@@ -299,3 +300,4 @@ class BatchableAudioTranscriber(bentoml.Runnable):
             )
             for text in segments
         ]
+"""
