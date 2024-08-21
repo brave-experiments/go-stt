@@ -39,11 +39,11 @@ class AudioTranscriber(bentoml.Runnable):
         return {"text": text}
 
 
-from pydantic import BaseModel
 import numpy as np
 import io
 from datetime import datetime
 from faster_whisper.vad import get_speech_timestamps, collect_chunks
+from pydantic import BaseModel
 
 
 class BatchInput(BaseModel):
@@ -59,20 +59,6 @@ class BatchOutput(BaseModel):
     transcribe_time: float
     restore_time: float
 
-
-class BatchItem(BaseModel):
-    start_time: float
-    end_time: float
-    chunks_count: int
-    transcription: str = ""
-
-    def add(self, word):
-        if (
-            self.chunks_count > 0
-            and word.start >= self.start_time
-            and word.end <= self.end_time
-        ):
-            self.transcription += word.word
 
 """
 class BatchableAudioTranscriber(bentoml.Runnable):
@@ -177,11 +163,14 @@ class BatchableAudioTranscriber(bentoml.Runnable):
     SUPPORTS_CPU_MULTI_THREADING = True
 
     def __init__(self):
+        pass
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.processor = Wav2Vec2Processor.from_pretrained(
+            # "facebook/wav2vec2-base-960h"
             "facebook/wav2vec2-large-960h-lv60-self"
         )
         self.model = Wav2Vec2ForCTC.from_pretrained(
+            # "facebook/wav2vec2-base-960h"
             "facebook/wav2vec2-large-960h-lv60-self"
         ).cuda()
 
@@ -194,27 +183,15 @@ class BatchableAudioTranscriber(bentoml.Runnable):
             logits = self.model(input_values).logits
         predicted_ids = torch.argmax(logits, dim=-1)
         transcriptions = self.processor.batch_decode(predicted_ids)
-        print(transcriptions)
 
         return transcriptions
 
     @bentoml.Runnable.method(batchable=True)
     def transcribe_audio(self, inputs: list[BatchInput]) -> list[str]:
-        result = []
-
         # merging audio
-        ts = datetime.now()
         audio_batch = []
         for input in inputs:
-            wav = decode_audio(io.BytesIO(input.audio))
-            chunks = get_speech_timestamps(wav)
-            if len(chunks) == 0:
-                audio_batch.append(np.zeros(16000, dtype=np.float32))
-            else:
-                wav = collect_chunks(wav, chunks=chunks)
-                audio_batch.append(wav)
-
-        merge_time = (datetime.now() - ts).total_seconds()
+            audio_batch.append(np.frombuffer(input.audio, dtype=np.float32))
 
         ts = datetime.now()
         segments = self.transcribe(audio_batch)
@@ -224,12 +201,13 @@ class BatchableAudioTranscriber(bentoml.Runnable):
             BatchOutput(
                 text=text,
                 batched_count=len(inputs),
-                merge_audio_time=merge_time,
+                merge_audio_time=0,
                 transcribe_time=transcribe_time,
                 restore_time=0,
             )
             for text in segments
         ]
+
 
 """
 from transformers import WhisperProcessor, WhisperForConditionalGeneration

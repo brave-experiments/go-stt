@@ -4,7 +4,6 @@ from datetime import datetime
 
 import bentoml
 from runners.audio_transcriber import (
-    AudioTranscriber,
     BatchableAudioTranscriber,
     BatchInput,
 )
@@ -17,6 +16,7 @@ import utils.google_streaming.google_streaming_api_pb2 as speech
 from utils.service_key.brave_service_key import check_stt_request
 
 import utils.ipc as ipc
+from stream_transcriber import StreamTranscriber
 
 runner_audio_transcriber = bentoml.Runner(
     BatchableAudioTranscriber,
@@ -60,48 +60,60 @@ async def handleUpstream(
     try:
         mic_data = bytes()
         text = ""
+        stream = StreamTranscriber()
         async with ipc.client.Publisher(pair) as pipe:
             try:
                 async for chunk in request.stream():
                     if len(chunk) == 0:
                         break
-                    mic_data += chunk
-                    process_time = datetime.now()
-                    transciption = await runner_audio_transcriber.async_run(
-                        [BatchInput(audio=mic_data, lang=lang, pair=pair)]
-                    )
-                    process_time = (datetime.now() - process_time).total_seconds()
+                    stream.consume(chunk)
 
-                    out = transciption[0]
-                    print(
-                        pair,
-                        " : ",
-                        out.batched_count,
-                        "",
-                        out.merge_audio_time,
-                        " ",
-                        out.transcribe_time,
-                        " ",
-                        out.restore_time,
-                    )
-
-                    if out.text:
-                        await pipe.push(
-                            ipc.messages.Text(
-                                out.text,
-                                False,
-                                len(mic_data),
-                                out.merge_audio_time
-                                + out.transcribe_time
-                                + out.restore_time,
-                                process_time,
-                            )
+                    while stream.should_transcribe():
+                        process_time = datetime.now()
+                        transciption = await runner_audio_transcriber.async_run(
+                            [
+                                BatchInput(
+                                    audio=stream.get_speech_audio(),
+                                    lang=lang,
+                                    pair=pair,
+                                )
+                            ]
                         )
+                        process_time = (datetime.now() - process_time).total_seconds()
+
+                        out = transciption[0]
+                        print(
+                            pair,
+                            " : ",
+                            out.batched_count,
+                            "",
+                            out.merge_audio_time,
+                            " ",
+                            out.transcribe_time,
+                            " ",
+                            out.restore_time,
+                        )
+
+                        if out.text:
+                            text += out.text.lower() + " "
+                            await pipe.push(
+                                ipc.messages.Text(
+                                    text,
+                                    False,
+                                    len(mic_data),
+                                    out.merge_audio_time
+                                    + out.transcribe_time
+                                    + out.restore_time,
+                                    process_time,
+                                )
+                            )
+
             finally:
                 if text:
                     await pipe.push(ipc.messages.Text(text, True))
 
     except Exception as e:
+        raise
         return JSONResponse(
             content=jsonable_encoder({"status": "exception", "exception": str(e)})
         )
