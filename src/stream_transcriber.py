@@ -42,12 +42,15 @@ class StreamTranscriber:
         self._vad_detected_offset = 0
         self._speech_audio_buffers = []
         self._speech_timestamps = []
+        self._last_chunk_received = False
 
         self._vad_options = VadOptions(
-            min_speech_duration_ms=60, min_silence_duration_ms=60
+            min_speech_duration_ms=125, min_silence_duration_ms=125, speech_pad_ms=125
         )
 
     def consume(self, stream_data: bytes):
+        self._last_chunk_received = len(stream_data) == 0
+
         self._raw_stream_data += stream_data
         try:
             raw_audio_buffer = decode_audio(io.BytesIO(self._raw_stream_data))
@@ -64,16 +67,17 @@ class StreamTranscriber:
         if not speech_timestamps:
             return
 
-        # remove the speech chunks which probably are not ended
-        while (
-            speech_timestamps
-            and speech_timestamps[-1]["end"]
-            > len(raw_audio_buffer) - self._vad_options.min_silence_duration_ms * 16
-        ):
-            del speech_timestamps[-1]
+        if not self._last_chunk_received:
+            # remove the speech chunks which probably are not ended
+            while (
+                speech_timestamps
+                and speech_timestamps[-1]["end"]
+                > len(raw_audio_buffer) - self._vad_options.min_silence_duration_ms * 16
+            ):
+                del speech_timestamps[-1]
 
-        if not speech_timestamps:
-            return
+            if not speech_timestamps:
+                return
 
         self._vad_detected_offset += speech_timestamps[-1]["end"]
 
@@ -105,7 +109,7 @@ class StreamTranscriber:
 
         [print(buf2secs(x)) for x in self._speech_audio_buffers]
 
-        print(len2secs(self._raw_stream_data_duration), self._vad_detected_offset)
+        print(self._raw_stream_data_duration, len2secs(self._vad_detected_offset))
 
     def should_transcribe(self):
         if not self._speech_audio_buffers:
@@ -114,7 +118,7 @@ class StreamTranscriber:
             return True
         if self._raw_stream_data_duration > 3:
             return True
-        return False
+        return self._last_chunk_received
 
     def get_speech_audio(self) -> bytes:
         assert self.should_transcribe()

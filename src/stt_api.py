@@ -64,8 +64,6 @@ async def handleUpstream(
         async with ipc.client.Publisher(pair) as pipe:
             try:
                 async for chunk in request.stream():
-                    if len(chunk) == 0:
-                        break
                     stream.consume(chunk)
 
                     while stream.should_transcribe():
