@@ -1,28 +1,43 @@
-import io
+import asyncio
+import logging
 import os
 
-import bentoml
-from bentoml.io import JSON, File
+from threading import Thread
 
-from stt_api import app, runner_audio_transcriber
+from .stt_api import app, runner_audio_transcriber
+from .ipc import run_ipc_server
 
-import ipc_server
-
-svc = bentoml.Service(
-    "stt",
-    runners=[runner_audio_transcriber],
+logger = logging.getLogger(__name__)
+logging.basicConfig(
+    format="%(asctime)s.%(msecs)03d %(levelname)-8s %(message)s",
+    level=logging.DEBUG,
+    datefmt="%Y-%m-%d %H:%M:%S",
 )
 
-svc.mount_asgi_app(app)
+
+def start_background_loop(loop: asyncio.AbstractEventLoop) -> None:
+    asyncio.set_event_loop(loop)
+    loop.run_forever()
 
 
-@svc.on_deployment
-def on_deployment():
-    if not os.fork():
-        ipc_server.start_ipc_server()
+def multiprocessing_startup():
+    loop = asyncio.new_event_loop()
+    loop.create_task(runner_audio_transcriber.run(loop=loop, warmup=True))
+    loop.create_task(run_ipc_server("localhost", 3015))
+    t = Thread(target=start_background_loop, args=(loop,), daemon=True)
+    t.start()
 
 
-@svc.api(input=File(), output=JSON())
-async def process_audio(input_file: io.BytesIO):
-    transcript = await runner_audio_transcriber.transcribe_audio.async_run(input_file)
-    return transcript
+@app.on_event("startup")
+async def app_startup():
+    loop = asyncio.get_event_loop()
+    loop.create_task(runner_audio_transcriber.run(loop=loop, warmup=True))
+    loop.create_task(run_ipc_server("localhost", 3015))
+
+    logger = logging.getLogger("uvicorn.access")
+    handler = logging.StreamHandler()
+    handler.setFormatter(
+        logging.Formatter("%(asctime)s.%(msecs)03d %(levelname)-8s %(message)s")
+    )
+    handler.setLevel(logging.DEBUG)
+    logger.addHandler(handler)

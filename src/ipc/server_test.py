@@ -1,8 +1,10 @@
 import asyncio
 
-from utils.ipc.client import Publisher, Subscriber
-from utils.ipc import messages
-from ipc_server import run_ipc_server
+import pytest
+
+from stt.ipc.client import Publisher, Subscriber
+from stt.ipc import messages
+from stt.ipc.server import run_ipc_server
 
 
 async def publisher(pair):
@@ -41,15 +43,16 @@ async def batch(pair):
     except Exception as e:
         print(e)
         pass
+    print("done")
 
 
-async def main():
-    tasks = [ asyncio.create_task(run_ipc_server("localhost", 3015))]
+@pytest.mark.asyncio
+async def test_server():
+    srv = asyncio.create_task(run_ipc_server("localhost", 3015))
+
+    tasks = []
     for i in range(20):
         tasks.append(asyncio.create_task(batch(str(i))))
-
     for t in tasks:
         await t
-
-
-asyncio.run(main())
+    srv.cancel()

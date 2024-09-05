@@ -1,5 +1,13 @@
+import functools
+import time
+
 from faster_whisper import decode_audio
-from faster_whisper.vad import get_speech_timestamps, collect_chunks, VadOptions
+from faster_whisper.vad import (
+    get_speech_timestamps,
+    collect_chunks,
+    VadOptions,
+    get_vad_model,
+)
 
 import numpy as np
 import io
@@ -34,7 +42,7 @@ def split_speech_timestamps(speech_timestamps, buffered, split_time):
 
 
 class StreamTranscriber:
-    def __init__(self):
+    def __init__(self, loop, pool):
 
         self._raw_stream_data = bytes()
         self._raw_stream_data_duration = 0
@@ -48,21 +56,31 @@ class StreamTranscriber:
             min_speech_duration_ms=125, min_silence_duration_ms=125, speech_pad_ms=125
         )
 
-    def consume(self, stream_data: bytes):
+        self.loop = loop
+        self.pool = pool
+
+    async def consume(self, stream_data: bytes):
         self._last_chunk_received = len(stream_data) == 0
 
         self._raw_stream_data += stream_data
         try:
             raw_audio_buffer = decode_audio(io.BytesIO(self._raw_stream_data))
             raw_audio_buffer = raw_audio_buffer[self._vad_detected_offset :]
-        except:
+        except Exception as e:
             return
 
         self._raw_stream_data_duration = buf2secs(raw_audio_buffer)
 
-        speech_timestamps = get_speech_timestamps(
-            raw_audio_buffer, vad_options=self._vad_options
+        start = time.time()
+        speech_timestamps = await self.loop.run_in_executor(
+            self.pool,
+            functools.partial(
+                get_speech_timestamps,
+                raw_audio_buffer,
+                vad_options=self._vad_options,
+            ),
         )
+        # print(f"vad took {time.time() - start}s")
 
         if not speech_timestamps:
             return
@@ -85,7 +103,7 @@ class StreamTranscriber:
         if self._speech_audio_buffers:
             buffered = buf2secs(self._speech_audio_buffers[-1])
 
-        print(speech_timestamps)
+        # print(speech_timestamps)
 
         speech_timestamps = split_speech_timestamps(
             speech_timestamps,
@@ -93,7 +111,7 @@ class StreamTranscriber:
             5,
         )
 
-        print(speech_timestamps)
+        # print(speech_timestamps)
 
         for chunks in speech_timestamps:
             speech = collect_chunks(raw_audio_buffer, chunks)
@@ -107,7 +125,7 @@ class StreamTranscriber:
                     self._speech_audio_buffers[-1], speech
                 )
 
-        [print(buf2secs(x)) for x in self._speech_audio_buffers]
+        # [print(buf2secs(x)) for x in self._speech_audio_buffers]
 
         print(self._raw_stream_data_duration, len2secs(self._vad_detected_offset))
 

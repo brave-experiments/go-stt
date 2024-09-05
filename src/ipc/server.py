@@ -1,5 +1,5 @@
 import asyncio
-from utils.ipc import messages
+from . import messages
 
 Publishers: dict[str, asyncio.StreamReader] = {}
 Subscribers: dict[str, bool] = {}
