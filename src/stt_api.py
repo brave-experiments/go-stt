@@ -28,6 +28,9 @@ from .runners.audio_transcriber import (
 runner_audio_transcriber = LocalRunner(
     WhisperHFRunnable,
     name="audio_transcriber",
+    runnable_init_params={
+        "model_id": "distil-whisper/distil-large-v3",
+    },
     batch_params=BatchParameters(max_size=32),
 )
 vad_executor_pool = ProcessPoolExecutor()
