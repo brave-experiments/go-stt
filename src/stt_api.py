@@ -29,7 +29,7 @@ runner_audio_transcriber = LocalRunner(
     WhisperHFRunnable,
     name="audio_transcriber",
     runnable_init_params={
-        "model_id": "distil-whisper/distil-large-v3",
+        "model_id": "openai/whisper-base",
     },
     batch_params=BatchParameters(max_size=32),
 )
