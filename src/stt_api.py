@@ -42,7 +42,7 @@ def TextToProtoMessage(text: ipc_messages.Text):
     event.result.append(rr)
 
     proto = event.SerializeToString()
-    return len(proto).to_bytes(4, signed=False) + proto
+    return len(proto).to_bytes(4, "big", signed=False) + proto
 
 
 app = FastAPI()
