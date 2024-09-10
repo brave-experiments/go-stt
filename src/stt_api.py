@@ -28,10 +28,6 @@ from .runners.audio_transcriber import (
 runner_audio_transcriber = LocalRunner(
     WhisperHFRunnable,
     name="audio_transcriber",
-    runnable_init_params={
-        # FIXME for local testing
-        "model_id": "openai/whisper-tiny",
-    },
     batch_params=BatchParameters(max_size=32),
 )
 vad_executor_pool = ProcessPoolExecutor()
