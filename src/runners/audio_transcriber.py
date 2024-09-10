@@ -44,7 +44,7 @@ class WhisperHFRunnable(Runnable):
 
     def forward(self, data: List[bytes]) -> List[str]:
         start = time.time()
-        result = self.pipe(data)
+        result = self.pipe(data, batch_size=len(data))
         transcribe_time = time.time() - start
         return [
             BatchOutput(
