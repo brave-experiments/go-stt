@@ -9,4 +9,4 @@ COPY . /app
 WORKDIR /app
 RUN pip install .
 
-CMD [ "python3", "-m", "uvicorn", "stt:app" ]
+CMD [ "python3", "-m", "gunicorn", "-k", "uvicorn.workers.UvicornWorker", "stt:app", "--workers", "1", "--preload" ]

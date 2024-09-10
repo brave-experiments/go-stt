@@ -22,7 +22,6 @@ def start_background_loop(loop: asyncio.AbstractEventLoop) -> None:
 
 def multiprocessing_startup():
     loop = asyncio.new_event_loop()
-    loop.create_task(runner_audio_transcriber.run(loop=loop, warmup=True))
     loop.create_task(run_ipc_server("localhost", 3015))
     t = Thread(target=start_background_loop, args=(loop,), daemon=True)
     t.start()
@@ -32,7 +31,6 @@ def multiprocessing_startup():
 async def app_startup():
     loop = asyncio.get_event_loop()
     loop.create_task(runner_audio_transcriber.run(loop=loop, warmup=True))
-    loop.create_task(run_ipc_server("localhost", 3015))
 
     logger = logging.getLogger("uvicorn.access")
     handler = logging.StreamHandler()
@@ -41,3 +39,6 @@ async def app_startup():
     )
     handler.setLevel(logging.DEBUG)
     logger.addHandler(handler)
+
+
+multiprocessing_startup()
