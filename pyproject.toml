@@ -4,7 +4,6 @@ version = "0.1.0"
 description = "brave stt service"
 readme = "README.md"
 
-dependencies = ["accelerate", "aiofiles", "asyncio", "ctranslate2==3.23.0", "fastapi", "faster_whisper", "gunicorn", "huggingface_hub", "msgspec", "pydantic", "pydantic-settings", "six", "torch", "transformers", "uvicorn", "scipy"]
 
 [project.optional-dependencies]
 dev = ["black", "pylint"]

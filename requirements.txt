@@ -1,0 +1,16 @@
+accelerate
+aiofiles
+asyncio
+ctranslate2==3.23.0
+fastapi
+faster_whisper
+gunicorn
+huggingface_hub
+msgspec
+pydantic
+pydantic-settings
+six
+torch
+transformers
+uvicorn
+scipy

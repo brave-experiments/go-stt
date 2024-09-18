@@ -22,7 +22,7 @@ def start_background_loop(loop: asyncio.AbstractEventLoop) -> None:
 
 def multiprocessing_startup():
     loop = asyncio.new_event_loop()
-    loop.create_task(run_ipc_server("localhost", 3015))
+    loop.create_task(run_ipc_server("127.0.0.1", 3015))
     t = Thread(target=start_background_loop, args=(loop,), daemon=True)
     t.start()
 
