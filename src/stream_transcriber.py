@@ -1,5 +1,8 @@
+import torch
+
 from faster_whisper import decode_audio
-from faster_whisper.vad import get_speech_timestamps, collect_chunks, VadOptions
+
+from silero_vad import (get_speech_timestamps, load_silero_vad, collect_chunks)
 
 import numpy as np
 import io
@@ -24,7 +27,8 @@ def split_speech_timestamps(speech_timestamps, buffered, split_time):
     timestamps = []
     while speech_timestamps:
         timestamps.append([])
-        while speech_timestamps and speech_timestamps[0]["end"] < max_offset - buffered:
+        while speech_timestamps and speech_timestamps[0][
+                "end"] < max_offset - buffered:
             timestamps[-1].append(speech_timestamps.pop(0))
 
         max_offset += secs2len(split_time)
@@ -34,7 +38,8 @@ def split_speech_timestamps(speech_timestamps, buffered, split_time):
 
 
 class StreamTranscriber:
-    def __init__(self):
+
+    def __init__(self, loop, pool):
 
         self._raw_stream_data = bytes()
         self._raw_stream_data_duration = 0
@@ -44,36 +49,42 @@ class StreamTranscriber:
         self._speech_timestamps = []
         self._last_chunk_received = False
 
-        self._vad_options = VadOptions(
-            min_speech_duration_ms=125, min_silence_duration_ms=125, speech_pad_ms=125
-        )
+        self._vad_model = load_silero_vad()
 
-    def consume(self, stream_data: bytes):
+        self._min_speech_duration_ms = 125
+        self._min_silence_duration_ms = 125
+        self._speech_pad_ms = 125
+
+        self.loop = loop
+        self.pool = pool
+
+    async def consume(self, stream_data: bytes):
         self._last_chunk_received = len(stream_data) == 0
 
         self._raw_stream_data += stream_data
         try:
             raw_audio_buffer = decode_audio(io.BytesIO(self._raw_stream_data))
-            raw_audio_buffer = raw_audio_buffer[self._vad_detected_offset :]
-        except:
+            raw_audio_buffer = raw_audio_buffer[self._vad_detected_offset:]
+        except Exception as e:
             return
 
         self._raw_stream_data_duration = buf2secs(raw_audio_buffer)
 
         speech_timestamps = get_speech_timestamps(
-            raw_audio_buffer, vad_options=self._vad_options
-        )
+            raw_audio_buffer,
+            self._vad_model,
+            min_speech_duration_ms=self._min_speech_duration_ms,
+            min_silence_duration_ms=self._min_silence_duration_ms,
+            speech_pad_ms=self._speech_pad_ms)
 
         if not speech_timestamps:
             return
 
         if not self._last_chunk_received:
             # remove the speech chunks which probably are not ended
-            while (
-                speech_timestamps
-                and speech_timestamps[-1]["end"]
-                > len(raw_audio_buffer) - self._vad_options.min_silence_duration_ms * 16
-            ):
+            while (speech_timestamps
+                   and speech_timestamps[-1]["end"] > len(raw_audio_buffer) -
+                   self._min_silence_duration_ms * 16):
                 del speech_timestamps[-1]
 
             if not speech_timestamps:
@@ -85,31 +96,22 @@ class StreamTranscriber:
         if self._speech_audio_buffers:
             buffered = buf2secs(self._speech_audio_buffers[-1])
 
-        print(speech_timestamps)
-
         speech_timestamps = split_speech_timestamps(
             speech_timestamps,
             buffered,
             5,
         )
 
-        print(speech_timestamps)
-
         for chunks in speech_timestamps:
-            speech = collect_chunks(raw_audio_buffer, chunks)
-            if (
-                not self._speech_audio_buffers
-                or buf2secs(self._speech_audio_buffers[-1]) > 5
-            ):
+            speech = collect_chunks(
+                chunks, torch.tensor(raw_audio_buffer,
+                                     dtype=torch.float32)).numpy()
+            if (not self._speech_audio_buffers
+                    or buf2secs(self._speech_audio_buffers[-1]) > 5):
                 self._speech_audio_buffers.append(speech)
             else:
                 self._speech_audio_buffers[-1] = np.append(
-                    self._speech_audio_buffers[-1], speech
-                )
-
-        [print(buf2secs(x)) for x in self._speech_audio_buffers]
-
-        print(self._raw_stream_data_duration, len2secs(self._vad_detected_offset))
+                    self._speech_audio_buffers[-1], speech)
 
     def should_transcribe(self):
         if not self._speech_audio_buffers:

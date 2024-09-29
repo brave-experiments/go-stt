@@ -1,5 +1,5 @@
 import asyncio
-from utils.ipc import messages
+from . import messages
 
 Publishers: dict[str, asyncio.StreamReader] = {}
 Subscribers: dict[str, bool] = {}
@@ -108,7 +108,7 @@ async def run_ipc_server(host, port):
         await server.serve_forever()
 
 
-def start_ipc_server(host="localhost", port=3015):
+def start_ipc_server(host="127.0.0.1", port=3015):
     asyncio.run(run_ipc_server(host, port))
 
 

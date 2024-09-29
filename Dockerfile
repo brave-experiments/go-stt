@@ -1,81 +1,20 @@
-# ===========================================
-#
-# THIS IS A GENERATED DOCKERFILE. DO NOT EDIT
-#
-# ===========================================
-
-# Block SETUP_BENTO_BASE_IMAGE
-FROM nvidia/cuda:12.2.2-cudnn8-runtime-ubuntu22.04 as base-container
-
-ENV LANG=C.UTF-8
-
-ENV LC_ALL=C.UTF-8
-
-ENV PYTHONIOENCODING=UTF-8
-
-ENV PYTHONUNBUFFERED=1
+FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
 
 ENV NVIDIA_VISIBLE_DEVICES=all
 
+RUN apt update && apt install -y python3-pip
 
-USER root
+RUN pip install --upgrade pip
+RUN pip install --upgrade setuptools
 
-ENV DEBIAN_FRONTEND=noninteractive
-RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
-RUN set -eux && \
-    apt-get update -y && \
-    apt-get install -q -y --no-install-recommends --allow-remove-essential \
-    ca-certificates gnupg2 bash build-essential libsndfile1 ffmpeg
+COPY ./requirements.txt ./requirements.txt
 
-RUN \
-    set -eux && \
-    apt-get install -y --no-install-recommends --allow-remove-essential software-properties-common && \
-    # add deadsnakes ppa to install python
-    add-apt-repository ppa:deadsnakes/ppa && \
-    apt-get update -y && \
-    apt-get install -y --no-install-recommends --allow-remove-essential curl python3.11 python3.11-dev python3.11-distutils
+RUN pip install -r requirements.txt
 
-RUN ln -sf /usr/bin/python3.11 /usr/bin/python3 && \
-    ln -sf /usr/bin/pip3.11 /usr/bin/pip3
+COPY . /app
+WORKDIR /app
+RUN pip install .
 
-RUN curl -O https://bootstrap.pypa.io/get-pip.py && \
-    python3 get-pip.py && \
-    rm -rf get-pip.py
-
-# Block SETUP_BENTO_USER
-ARG BENTO_USER=bentoml
-ARG BENTO_USER_UID=1034
-ARG BENTO_USER_GID=1034
-RUN groupadd -g $BENTO_USER_GID -o $BENTO_USER && useradd -m -u $BENTO_USER_UID -g $BENTO_USER_GID -o -r $BENTO_USER
-
-ENV BENTOML_CONFIG=src/configuration.yaml
-ARG BENTO_PATH=/home/bentoml/bento
-ENV BENTO_PATH=$BENTO_PATH
-ENV BENTOML_HOME=/home/bentoml/
-ENV BENTOML_DO_NOT_TRACK=True
-
-RUN mkdir $BENTO_PATH && chown bentoml:bentoml $BENTO_PATH -R
-WORKDIR $BENTO_PATH
-
-# Block SETUP_BENTO_COMPONENTS
-COPY --chown=bentoml:bentoml ./env/python ./env/python/
-# install python packages with install.sh
-RUN bash -euxo pipefail /home/bentoml/bento/env/python/install.sh
-COPY --chown=bentoml:bentoml . ./
-
-# Block SETUP_BENTO_ENTRYPOINT
-RUN rm -rf /var/lib/{apt,cache,log}
-# Default port for BentoServer
 EXPOSE 3000
 
-# Expose Prometheus port
-EXPOSE 3001
-
-RUN chmod +x /home/bentoml/bento/env/docker/entrypoint.sh
-
-USER bentoml
-
-RUN mkdir /home/bentoml/.cache
-RUN mkdir /home/bentoml/.cache/torch
-
-ENTRYPOINT [ "/home/bentoml/bento/env/docker/entrypoint.sh" ]
+CMD [ "python3", "-m", "gunicorn", "-k", "uvicorn.workers.UvicornWorker", "stt:app", "--workers", "1", "-b", "0.0.0.0:3000"]

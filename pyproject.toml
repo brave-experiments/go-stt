@@ -1,0 +1,14 @@
+[project]
+name = "stt"
+version = "0.1.0"
+description = "brave stt service"
+readme = "README.md"
+
+
+[project.optional-dependencies]
+dev = ["black", "pylint"]
+test = ["pytest", "pytest-asyncio"]
+
+[tool.setuptools.package-dir]
+stt = "src"
+sampuru = "sampuru"

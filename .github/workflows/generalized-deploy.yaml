@@ -4,6 +4,7 @@ on:
       - main
       - dev
       - bentoml
+      - replace-bentoml
 
 name: stt deployments
 jobs:

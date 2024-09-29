@@ -3,7 +3,7 @@ from . import messages
 
 
 class Publisher:
-    def __init__(self, pair, host="localhost", port=3015):
+    def __init__(self, pair, host="127.0.0.1", port=3015):
         self._pair: str = pair
         self._host = host
         self._port = port
@@ -39,7 +39,7 @@ class Publisher:
 
 
 class Subscriber:
-    def __init__(self, pair: str, host="localhost", port=3015):
+    def __init__(self, pair: str, host="127.0.0.1", port=3015):
         self._pair: str = pair
         self._host = host
         self._port = port
