@@ -1,8 +1,9 @@
 import torch
 
 from faster_whisper import decode_audio
+from faster_whisper.vad import collect_chunks
 
-from silero_vad import (get_speech_timestamps, load_silero_vad, collect_chunks)
+from silero_vad import (get_speech_timestamps, load_silero_vad)
 
 import numpy as np
 import io
@@ -103,9 +104,7 @@ class StreamTranscriber:
         )
 
         for chunks in speech_timestamps:
-            speech = collect_chunks(
-                chunks, torch.tensor(raw_audio_buffer,
-                                     dtype=torch.float32)).numpy()
+            speech = collect_chunks(raw_audio_buffer, chunks)
             if (not self._speech_audio_buffers
                     or buf2secs(self._speech_audio_buffers[-1]) > 5):
                 self._speech_audio_buffers.append(speech)

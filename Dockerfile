@@ -17,4 +17,4 @@ RUN pip install .
 
 EXPOSE 3000
 
-CMD [ "python3", "-m", "gunicorn", "-k", "uvicorn.workers.UvicornWorker", "stt:app", "--workers", "1", "-b", "0.0.0.0:3000"]
+CMD [ "python3", "-m", "gunicorn", "-k", "uvicorn.workers.UvicornWorker", "stt:app", "--workers", "4", "-b", "0.0.0.0:3000"]

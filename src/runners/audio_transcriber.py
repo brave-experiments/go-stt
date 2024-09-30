@@ -14,6 +14,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class BatchOutput(BaseModel):
     text: str
     batched_count: int
@@ -23,9 +24,11 @@ class BatchOutput(BaseModel):
 
 
 class WhisperHFRunnable(Runnable):
+
     def __init__(self, model_id: str = "openai/whisper-tiny"):
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
-        torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
+        torch_dtype = torch.float16 if torch.cuda.is_available(
+        ) else torch.float32
 
         model = AutoModelForSpeechSeq2Seq.from_pretrained(
             model_id,
@@ -46,9 +49,15 @@ class WhisperHFRunnable(Runnable):
             device=device,
         )
 
-    def forward(self, data: List[bytes]) -> List[BatchOutput]:
+    def forward(self, data: List[any]) -> List[BatchOutput]:
         start = time.time()
-        result = self.pipe(data, batch_size=len(data))
+
+        audios = [d["raw"] for d in data]
+        langs = [d["lang"] for d in data]
+
+        result = self.pipe(audios,
+                           batch_size=len(data),
+                           generate_kwargs={"language": langs})
         logger.debug(result)
         transcribe_time = time.time() - start
         no_punctuation = str.maketrans('', '', string.punctuation)
@@ -59,6 +68,5 @@ class WhisperHFRunnable(Runnable):
                 merge_audio_time=0,
                 transcribe_time=transcribe_time,
                 restore_time=0,
-            )
-            for r in result
+            ) for r in result
         ]

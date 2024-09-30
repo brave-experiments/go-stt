@@ -86,6 +86,7 @@ async def handleUpstream(
                                     "raw": np.frombuffer(
                                         stream.get_speech_audio(), dtype=np.float32
                                     ),
+                                    "lang": lang[:2],
                                     "sampling_rate": 16000,
                                 }
                             ]
