@@ -5,7 +5,9 @@ go 1.20
 require (
 	azul3d.org/engine v0.0.0-20211024043305-793ea6c2839d
 	github.com/brave-experiments/whisper.cpp/bindings/go v0.0.0-20231102103318-0dad03e80436
+	github.com/colega/zeropool v0.0.0-20230505084239-6fb4a4f75381
 	github.com/golang/protobuf v1.5.3
+	github.com/gorilla/websocket v1.5.3
 	github.com/rs/zerolog v1.30.0
 	github.com/urfave/cli/v2 v2.25.7
 	google.golang.org/protobuf v1.31.0
