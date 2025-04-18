@@ -24,3 +24,5 @@ models/*
 third_party/whisper.cpp
 .env
 dist
+
+/.vscode
